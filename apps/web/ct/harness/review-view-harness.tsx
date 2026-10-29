@@ -6,7 +6,7 @@ import {
 } from "@/layouts/task-board/review-view-model";
 
 /** Synthetic agent comment that follows the review contract. */
-export const CONTRACT_COMMENT = `## Pedido
+const CONTRACT_COMMENT = `## Pedido
 Trocar o banner da home pela campanha de outubro.
 
 ## O que mudou
