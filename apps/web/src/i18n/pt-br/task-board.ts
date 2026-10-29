@@ -530,6 +530,8 @@ export const taskBoard = {
   "taskBoard.review.adjustmentPlaceholder": "O que precisa mudar?",
   "taskBoard.review.adjustmentSend": "Devolver para To Do",
   "taskBoard.review.adjustmentCancel": "Cancelar",
-  "taskBoard.review.adjustmentHint": "O card volta para To Do com a sua nota. Alguém precisa rodar o agente de novo.",
-  "taskBoard.review.fallbackNotice": "O agente não usou o formato de revisão. Mostrando o comentário como foi enviado.",
+  "taskBoard.review.adjustmentHint":
+    "O card volta para To Do com a sua nota. Alguém precisa rodar o agente de novo.",
+  "taskBoard.review.fallbackNotice":
+    "O agente não usou o formato de revisão. Mostrando o comentário como foi enviado.",
 } satisfies Record<keyof typeof taskBoardEn, string>;

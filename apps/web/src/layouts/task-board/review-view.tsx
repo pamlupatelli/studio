@@ -270,7 +270,9 @@ function Block({
         <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {title}
         </h3>
-        {aside && <span className="text-xs text-muted-foreground">{aside}</span>}
+        {aside && (
+          <span className="text-xs text-muted-foreground">{aside}</span>
+        )}
       </div>
       <div className="text-sm">{children}</div>
     </div>

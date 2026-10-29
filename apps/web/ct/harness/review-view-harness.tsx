@@ -27,9 +27,6 @@ Antes e depois da home anexados.
 Não testado no Safari.
 `;
 
-/** A free-form comment: the agent skipped the contract. */
-export const FREE_COMMENT = "Pronto, abri o PR com o banner novo.";
-
 /**
  * CT surface for the Review view. Decisions are dumped into testid'd <pre>s so
  * specs can assert what the view reported.
@@ -60,7 +57,9 @@ export function ReviewViewHarness({
         round={round}
         agentChecks={5}
         onApprove={() => setApproved((n) => n + 1)}
-        onRequestAdjustment={(note) => setAdjustments((prev) => [...prev, note])}
+        onRequestAdjustment={(note) =>
+          setAdjustments((prev) => [...prev, note])
+        }
       />
       <pre data-testid="approved">{approved}</pre>
       <pre data-testid="adjustments">{JSON.stringify(adjustments)}</pre>

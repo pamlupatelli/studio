@@ -26,7 +26,9 @@ describe("parseReviewSections", () => {
   it("reads every contract section", () => {
     const parsed = parseReviewSections(FULL);
     expect(parsed?.request).toBe("Trocar o banner da home.");
-    expect(parsed?.changed).toBe("O banner agora mostra a campanha de outubro.");
+    expect(parsed?.changed).toBe(
+      "O banner agora mostra a campanha de outubro.",
+    );
     expect(parsed?.impact).toContain("Só a home");
     expect(parsed?.howToCheck).toEqual([
       "Abrir a home e ver o novo banner",

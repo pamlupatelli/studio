@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/experimental-ct-react";
-import {
-  FREE_COMMENT,
-  ReviewViewHarness,
-} from "../harness/review-view-harness";
+import { ReviewViewHarness } from "../harness/review-view-harness";
+
+// A free-form comment: the agent skipped the contract.
+const FREE_COMMENT = "Pronto, abri o PR com o banner novo.";
 
 test("QA: shows the sections and an itemized checklist", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
 
   await expect(component.getByText("What changed")).toBeVisible();
-  await expect(component.getByText("Abrir a home e ver o novo banner")).toBeVisible();
+  await expect(
+    component.getByText("Abrir a home e ver o novo banner"),
+  ).toBeVisible();
   await expect(component.getByText("0 of 3 checked")).toBeVisible();
 
   await component.getByRole("checkbox").first().click();
@@ -61,5 +63,7 @@ test("falls back to the raw comment when the contract is missing", async ({
   );
   await expect(component.getByTestId("review-fallback")).toBeVisible();
   await expect(component.getByText(FREE_COMMENT)).toBeVisible();
-  await expect(component.getByRole("button", { name: "Approve" })).toBeVisible();
+  await expect(
+    component.getByRole("button", { name: "Approve" }),
+  ).toBeVisible();
 });
