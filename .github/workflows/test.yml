@@ -32,7 +32,7 @@ jobs:
   # A job skipped via `if`, by contrast, reports as passed. So we keep the
   # trigger broad and skip at the job level. Pushes to main always run.
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       relevant: ${{ steps.filter.outputs.relevant }}
       web: ${{ steps.filter.outputs.web }}
@@ -90,7 +90,7 @@ jobs:
   format:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
   lint:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -123,7 +123,7 @@ jobs:
   typecheck:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -142,7 +142,7 @@ jobs:
   test:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # The suite normally finishes in ~1 min. A single hung file under the
     # parallel runner stalls the whole job silently (per-file output is
     # buffered, so the culprit prints nothing) — without this bound that's
@@ -164,7 +164,7 @@ jobs:
   build:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -193,7 +193,7 @@ jobs:
   web-component-tests:
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Headroom for the worst case of the mirror fallback below: 5 min for the
     # browser download plus 3 mirrors x 2 min for the system deps.
     timeout-minutes: 20

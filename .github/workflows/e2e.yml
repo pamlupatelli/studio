@@ -27,7 +27,7 @@ jobs:
   # workflow/docs/markdown-only PRs without leaving the required check
   # stuck pending. Pushes to main always run.
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       relevant: ${{ steps.filter.outputs.relevant }}
     steps:
@@ -69,7 +69,7 @@ jobs:
   e2e-shard:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Backstop above playwright's own 30min globalTimeout so its report wins.
     timeout-minutes: 35
     strategy:
@@ -245,7 +245,7 @@ jobs:
   e2e:
     needs: [changes, e2e-shard]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Verify shard results
         run: |
