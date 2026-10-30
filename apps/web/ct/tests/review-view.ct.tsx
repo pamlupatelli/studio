@@ -67,3 +67,21 @@ test("falls back to the raw comment when the contract is missing", async ({
     component.getByRole("button", { name: "Approve" }),
   ).toBeVisible();
 });
+
+test("shows the stage and what it means", async ({ mount }) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  await expect(component.getByTestId("review-stage")).toContainText(
+    "Stage: QA",
+  );
+});
+
+test("lays out labelled before and after images side by side", async ({
+  mount,
+}) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  const pair = component.getByTestId("review-before-after");
+  await expect(pair).toBeVisible();
+  await expect(pair.getByRole("img")).toHaveCount(2);
+  await expect(pair.getByText("Before")).toBeVisible();
+  await expect(pair.getByText("After")).toBeVisible();
+});

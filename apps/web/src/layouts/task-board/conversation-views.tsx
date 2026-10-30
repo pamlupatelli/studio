@@ -18,11 +18,10 @@ import {
 import { MemoizedMarkdown } from "@/components/chat/markdown";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useTaskBoardComments } from "@/hooks/use-task-board-comments";
-import { useTaskBoardItemActions } from "@/hooks/use-task-board-items";
 import { useTaskBoardItemPrs } from "@/hooks/use-task-board-item-prs";
 import { LOCALSTORAGE_KEYS } from "@/lib/localstorage-keys";
 import { useT } from "@/i18n/use-t.ts";
-import type { TaskBoardItem } from "./config";
+import { laneHeader, type TaskBoardItem } from "./config";
 import { PreviewButton } from "./preview-button";
 import { ReviewView } from "./review-view";
 import { pickReviewComment } from "./review-view-model";
@@ -43,9 +42,17 @@ const ADJUSTMENT_LANE: CanonicalColumnKey = "todo";
 
 export function ConversationViews({
   item,
+  status,
+  onMove,
   children,
 }: {
   item: TaskBoardItem;
+  /** The lane the card is in as the dialog shows it, so what this view says
+   *  and what the header says never disagree. */
+  status: TaskBoardItem["status"];
+  /** Moves the card through the dialog, which keeps its own copy of the lane
+   *  and saves it. */
+  onMove: (lane: CanonicalColumnKey) => void;
   children: ReactNode;
 }) {
   const t = useT();
@@ -55,7 +62,6 @@ export function ConversationViews({
   );
   const comments = useTaskBoardComments(item.id);
   const { data: prs } = useTaskBoardItemPrs(item.id);
-  const { update } = useTaskBoardItemActions();
 
   const picked = pickReviewComment(
     comments.threads.flatMap((thread) => [thread, ...thread.replies]),
@@ -67,27 +73,42 @@ export function ConversationViews({
 
   const view =
     choice === "auto"
-      ? REVIEW_LANES.includes(item.status)
+      ? REVIEW_LANES.includes(status)
         ? "review"
         : "full"
       : choice;
 
   const previewUrl = prs?.find((pr) => pr.previewUrl)?.previewUrl;
-  const nextLane = NEXT_LANE[item.status];
+  const nextLane = NEXT_LANE[status];
+  const lane = (key: string) => laneHeader(key, t).label;
   const failed = () => toast.error(t("taskBoard.review.actionFailed"));
 
   const approve = () => {
     if (!nextLane) return;
-    update.mutate({ id: item.id, status: nextLane }, { onError: failed });
+    onMove(nextLane);
+    toast.success(t("taskBoard.review.movedTo", { lane: lane(nextLane) }));
   };
   const requestAdjustment = async (note: string) => {
     try {
       await comments.post.mutateAsync({ body: note });
-      await update.mutateAsync({ id: item.id, status: ADJUSTMENT_LANE });
     } catch {
       failed();
+      return;
     }
+    onMove(ADJUSTMENT_LANE);
+    toast.success(
+      t("taskBoard.review.adjustmentSent", { lane: lane(ADJUSTMENT_LANE) }),
+    );
   };
+
+  const stageHint =
+    status === LANES.qa
+      ? t("taskBoard.review.stageHintQa")
+      : status === LANES.customer
+        ? t("taskBoard.review.stageHintCustomer")
+        : status === LANES.review
+          ? t("taskBoard.review.stageHintReview")
+          : undefined;
 
   return (
     <div className="flex flex-col gap-5">
@@ -124,8 +145,15 @@ export function ConversationViews({
               text={picked.body}
             />
           }
-          audience={item.status === LANES.customer ? "customer" : "deco"}
-          verifiedByDeco={item.status === LANES.customer}
+          audience={status === LANES.customer ? "customer" : "deco"}
+          verifiedByDeco={status === LANES.customer}
+          stage={t("taskBoard.review.stage", { lane: lane(status) })}
+          stageHint={stageHint}
+          approveLabel={
+            status === LANES.qa
+              ? t("taskBoard.review.approveQa")
+              : t("taskBoard.review.approveCustomer")
+          }
           onApprove={nextLane ? approve : undefined}
           onRequestAdjustment={nextLane ? requestAdjustment : undefined}
           preview={

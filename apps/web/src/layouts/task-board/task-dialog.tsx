@@ -1181,7 +1181,11 @@ function TaskBoardItemEditor({
 
                 {item && (
                   <div className="flex flex-col gap-8">
-                    <ConversationViews item={item}>
+                    <ConversationViews
+                      item={item}
+                      status={status}
+                      onMove={(lane) => patch({ status: lane })}
+                    >
                       <ActivitySection
                         item={item}
                         members={members}

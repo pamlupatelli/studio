@@ -529,4 +529,18 @@ export const taskBoard = {
   "taskBoard.review.fallbackNotice":
     "The agent did not use the review format. Showing its comment as sent.",
   "taskBoard.review.actionFailed": "Could not update the card.",
+  "taskBoard.review.evidenceBefore": "Before",
+  "taskBoard.review.evidenceAfter": "After",
+  "taskBoard.review.stage": "Stage: {lane}",
+  "taskBoard.review.stageHintReview":
+    "Agents are still reviewing. Nothing to decide yet.",
+  "taskBoard.review.stageHintQa":
+    "The deco team checks the work. Approving sends it to the client.",
+  "taskBoard.review.stageHintCustomer":
+    "The client decides. Approving releases it for deployment.",
+  "taskBoard.review.approveQa": "Approve QA and send to client",
+  "taskBoard.review.approveCustomer": "Approve and release for deployment",
+  "taskBoard.review.movedTo": "Card moved to {lane}.",
+  "taskBoard.review.adjustmentSent":
+    "Adjustment requested. The card is back in {lane}.",
 } as const;

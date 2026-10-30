@@ -535,4 +535,18 @@ export const taskBoard = {
   "taskBoard.review.fallbackNotice":
     "O agente não usou o formato de revisão. Mostrando o comentário como foi enviado.",
   "taskBoard.review.actionFailed": "Não foi possível atualizar o card.",
+  "taskBoard.review.evidenceBefore": "Antes",
+  "taskBoard.review.evidenceAfter": "Depois",
+  "taskBoard.review.stage": "Etapa: {lane}",
+  "taskBoard.review.stageHintReview":
+    "Os agentes ainda estão revisando. Nada para decidir ainda.",
+  "taskBoard.review.stageHintQa":
+    "O time da deco confere o trabalho. Aprovar envia para o cliente.",
+  "taskBoard.review.stageHintCustomer":
+    "O cliente decide. Aprovar libera para deploy.",
+  "taskBoard.review.approveQa": "Aprovar QA e enviar ao cliente",
+  "taskBoard.review.approveCustomer": "Aprovar e liberar para deploy",
+  "taskBoard.review.movedTo": "Card movido para {lane}.",
+  "taskBoard.review.adjustmentSent":
+    "Ajuste pedido. O card voltou para {lane}.",
 } satisfies Record<keyof typeof taskBoardEn, string>;

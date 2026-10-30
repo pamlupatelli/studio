@@ -5,6 +5,9 @@ import {
   type ReviewAudience,
 } from "@/layouts/task-board/review-view-model";
 
+const PIXEL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
 /** Synthetic agent comment that follows the review contract. */
 const CONTRACT_COMMENT = `## Pedido
 Trocar o banner da home pela campanha de outubro.
@@ -21,7 +24,10 @@ Só a home. Nenhuma outra página muda.
 - Ver a home no celular
 
 ## Evidências
-Antes e depois da home anexados.
+Antes e depois da home.
+
+![Antes](${PIXEL})
+![Depois](${PIXEL})
 
 ## Limitações
 Não testado no Safari.
@@ -56,6 +62,8 @@ export function ReviewViewHarness({
         verifiedByDeco={verifiedByDeco}
         round={round}
         agentChecks={5}
+        stage="Stage: QA"
+        stageHint="The deco team checks the work."
         onApprove={() => setApproved((n) => n + 1)}
         onRequestAdjustment={(note) =>
           setAdjustments((prev) => [...prev, note])

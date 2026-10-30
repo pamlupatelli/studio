@@ -135,3 +135,41 @@ export function pickReviewComment(
   const latest = fromAgent[0];
   return latest ? { body: latest.body, sections: null } : null;
 }
+
+export type EvidenceImage = {
+  alt: string;
+  url: string;
+  kind: "before" | "after" | "other";
+};
+
+const IMAGE_MARKDOWN = /!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/g;
+const SAFE_IMAGE_URL = /^(https?:\/\/|data:image\/(png|jpe?g|gif|webp);)/i;
+
+function imageKind(alt: string): EvidenceImage["kind"] {
+  const name = normalizeHeading(alt);
+  if (/\b(antes|before)\b/.test(name)) return "before";
+  if (/\b(depois|after)\b/.test(name)) return "after";
+  return "other";
+}
+
+/**
+ * Separates the images of an evidence section from its prose. Images whose
+ * alt text says before/after (or antes/depois) are labelled so the view can
+ * set them side by side. Only http(s) and inline image URLs are kept.
+ */
+export function splitEvidence(evidence: string): {
+  images: EvidenceImage[];
+  text: string;
+} {
+  const images: EvidenceImage[] = [];
+  const text = evidence
+    .replace(IMAGE_MARKDOWN, (_match, alt: string, url: string) => {
+      if (SAFE_IMAGE_URL.test(url)) {
+        images.push({ alt, url, kind: imageKind(alt) });
+      }
+      return "";
+    })
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { images, text };
+}

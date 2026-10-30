@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { parseReviewSections, pickReviewComment } from "./review-view-model";
+import {
+  parseReviewSections,
+  pickReviewComment,
+  splitEvidence,
+} from "./review-view-model";
 
 const FULL = `## Pedido
 Trocar o banner da home.
@@ -119,5 +123,34 @@ describe("pickReviewComment", () => {
       ),
     ).toBeNull();
     expect(pickReviewComment([], AGENT)).toBeNull();
+  });
+});
+
+describe("splitEvidence", () => {
+  it("labels before and after images and keeps the prose", () => {
+    const { images, text } = splitEvidence(
+      "Veja a diferença.\n\n![Antes](https://x.test/a.png)\n![Depois](https://x.test/b.png)",
+    );
+    expect(images.map((i) => i.kind)).toEqual(["before", "after"]);
+    expect(text).toBe("Veja a diferença.");
+  });
+
+  it("understands English labels and other images", () => {
+    const { images } = splitEvidence(
+      "![Before](https://x.test/a.png) ![mobile](https://x.test/m.png)",
+    );
+    expect(images.map((i) => i.kind)).toEqual(["before", "other"]);
+  });
+
+  it("drops images with unsafe URLs", () => {
+    const { images, text } = splitEvidence(
+      "![Antes](javascript:alert(1)) ![x](file:///etc/passwd)",
+    );
+    expect(images).toEqual([]);
+    expect(text).toBe("");
+  });
+
+  it("returns plain text untouched", () => {
+    expect(splitEvidence("só texto")).toEqual({ images: [], text: "só texto" });
   });
 });

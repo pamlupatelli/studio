@@ -19,7 +19,12 @@ import { cn } from "@decocms/ui/lib/utils.ts";
 import { CheckCircle } from "@untitledui/icons";
 import { MemoizedMarkdown } from "@/components/chat/markdown";
 import { useT } from "@/i18n/use-t.ts";
-import type { ReviewAudience, ReviewSections } from "./review-view-model";
+import {
+  splitEvidence,
+  type EvidenceImage,
+  type ReviewAudience,
+  type ReviewSections,
+} from "./review-view-model";
 
 export type ReviewViewProps = {
   /** Stable per card, used to key the rendered markdown. */
@@ -36,6 +41,11 @@ export type ReviewViewProps = {
   agentChecks?: number;
   /** The preview button, placed beside the evidence it belongs to. */
   preview?: ReactNode;
+  /** Where the card is and what a decision here does, in the person's words. */
+  stage?: string;
+  stageHint?: string;
+  /** Spells out what Approve does in this stage. */
+  approveLabel?: string;
   /** Both omitted: the view is read-only and shows no decision bar. */
   onApprove?: () => void;
   onRequestAdjustment?: (note: string) => void;
@@ -50,6 +60,9 @@ export function ReviewView({
   round = 1,
   agentChecks,
   preview,
+  stage,
+  stageHint,
+  approveLabel,
   onApprove,
   onRequestAdjustment,
 }: ReviewViewProps) {
@@ -68,6 +81,15 @@ export function ReviewView({
       aria-label={t("taskBoard.review.viewReview")}
       className="flex flex-col gap-5"
     >
+      {stage && (
+        <div data-testid="review-stage" className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">{stage}</p>
+          {stageHint && (
+            <p className="text-xs text-muted-foreground">{stageHint}</p>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         {verifiedByDeco && (
           <span
@@ -120,12 +142,7 @@ export function ReviewView({
 
           {(sections.evidence || preview) && (
             <Block title={t("taskBoard.review.evidence")}>
-              {sections.evidence && (
-                <MemoizedMarkdown
-                  id={`review-${id}-evidence`}
-                  text={sections.evidence}
-                />
-              )}
+              <Evidence id={id} evidence={sections.evidence} />
               {preview && <div className="mt-3">{preview}</div>}
             </Block>
           )}
@@ -247,7 +264,7 @@ export function ReviewView({
           ) : (
             <div className="flex gap-2">
               <Button onClick={onApprove}>
-                {t("taskBoard.review.approve")}
+                {approveLabel ?? t("taskBoard.review.approve")}
               </Button>
               <Button variant="outline" onClick={() => setAdjusting(true)}>
                 {t("taskBoard.review.requestAdjustment")}
@@ -281,5 +298,71 @@ function Block({
       </div>
       <div className="text-sm">{children}</div>
     </div>
+  );
+}
+
+/** The evidence prose, with its images laid out: a before/after pair side by
+ *  side when the agent labelled them, any other image in a grid. */
+function Evidence({ id, evidence }: { id: string; evidence?: string }) {
+  const t = useT();
+  if (!evidence) return null;
+  const { images, text } = splitEvidence(evidence);
+  const before = images.find((image) => image.kind === "before");
+  const after = images.find((image) => image.kind === "after");
+  const pair = before && after ? [before, after] : [];
+  const rest = images.filter((image) => !pair.includes(image));
+
+  return (
+    <div className="flex flex-col gap-3">
+      {text && <MemoizedMarkdown id={`review-${id}-evidence`} text={text} />}
+      {pair.length > 0 && (
+        <div
+          data-testid="review-before-after"
+          className="grid grid-cols-2 gap-3"
+        >
+          <EvidenceFigure
+            image={pair[0]!}
+            caption={t("taskBoard.review.evidenceBefore")}
+          />
+          <EvidenceFigure
+            image={pair[1]!}
+            caption={t("taskBoard.review.evidenceAfter")}
+          />
+        </div>
+      )}
+      {rest.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          {rest.map((image) => (
+            <EvidenceFigure key={image.url} image={image} caption={image.alt} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EvidenceFigure({
+  image,
+  caption,
+}: {
+  image: EvidenceImage;
+  caption: string;
+}) {
+  return (
+    <figure className="flex flex-col gap-1.5">
+      <a href={image.url} target="_blank" rel="noreferrer">
+        <img
+          src={image.url}
+          alt={image.alt || caption}
+          loading="lazy"
+          className="w-full rounded-lg border border-border bg-muted object-cover"
+        />
+      </a>
+      {caption && (
+        <figcaption className="text-xs text-muted-foreground">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
   );
 }
