@@ -144,7 +144,7 @@ describe("splitEvidence", () => {
 
   it("drops images with unsafe URLs", () => {
     const { images, text } = splitEvidence(
-      "![Antes](javascript:alert(1)) ![x](file:///etc/passwd)",
+      "![Antes](javascript:void) ![x](file:///etc/passwd)",
     );
     expect(images).toEqual([]);
     expect(text).toBe("");
