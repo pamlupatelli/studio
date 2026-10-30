@@ -100,3 +100,38 @@ export function parseReviewSections(markdown: string): ReviewSections | null {
 }
 
 export type ReviewAudience = "deco" | "customer";
+
+/** The slice of a comment the picker reads. */
+export type ReviewCommentSource = {
+  authorId: string;
+  audience: string;
+  body: string;
+  createdAt: string;
+};
+
+export type PickedReviewComment = {
+  body: string;
+  sections: ReviewSections | null;
+};
+
+/**
+ * The agent comment the Review view is built from: the latest human-facing
+ * comment by the agent that follows the contract. When none does, the latest
+ * human-facing agent comment as written (so the view can show it raw), or
+ * `null` when the agent has not commented for people at all.
+ */
+export function pickReviewComment(
+  comments: ReviewCommentSource[],
+  agentId: string,
+): PickedReviewComment | null {
+  const fromAgent = comments
+    .filter((c) => c.authorId === agentId && c.audience === "human")
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+
+  for (const comment of fromAgent) {
+    const sections = parseReviewSections(comment.body);
+    if (sections) return { body: comment.body, sections };
+  }
+  const latest = fromAgent[0];
+  return latest ? { body: latest.body, sections: null } : null;
+}

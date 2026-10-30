@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseReviewSections } from "./review-view-model";
+import { parseReviewSections, pickReviewComment } from "./review-view-model";
 
 const FULL = `## Pedido
 Trocar o banner da home.
@@ -73,5 +73,51 @@ describe("parseReviewSections", () => {
       "## O que mudou\nX\n## Notas\nsegredo\n## Como conferir\n- Y",
     );
     expect(parsed?.changed).toBe("X");
+  });
+});
+
+describe("pickReviewComment", () => {
+  const AGENT = "super-agent";
+  const contract = "## O que mudou\nX\n## Como conferir\n- Y";
+  const make = (
+    body: string,
+    createdAt: string,
+    authorId = AGENT,
+    audience = "human",
+  ) => ({ authorId, audience, body, createdAt });
+
+  it("prefers the latest comment that follows the contract", () => {
+    const picked = pickReviewComment(
+      [
+        make(contract, "2026-10-01T10:00:00Z"),
+        make("Pronto, abri o PR.", "2026-10-01T11:00:00Z"),
+      ],
+      AGENT,
+    );
+    expect(picked?.sections?.changed).toBe("X");
+  });
+
+  it("falls back to the latest agent comment as written", () => {
+    const picked = pickReviewComment(
+      [
+        make("primeiro", "2026-10-01T10:00:00Z"),
+        make("segundo", "2026-10-01T11:00:00Z"),
+      ],
+      AGENT,
+    );
+    expect(picked).toEqual({ body: "segundo", sections: null });
+  });
+
+  it("ignores people, internal comments and other authors", () => {
+    expect(
+      pickReviewComment(
+        [
+          make(contract, "2026-10-01T10:00:00Z", "someone"),
+          make(contract, "2026-10-01T11:00:00Z", AGENT, "internal"),
+        ],
+        AGENT,
+      ),
+    ).toBeNull();
+    expect(pickReviewComment([], AGENT)).toBeNull();
   });
 });

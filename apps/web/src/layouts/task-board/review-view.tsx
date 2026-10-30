@@ -36,8 +36,9 @@ export type ReviewViewProps = {
   agentChecks?: number;
   /** The preview button, placed beside the evidence it belongs to. */
   preview?: ReactNode;
-  onApprove: () => void;
-  onRequestAdjustment: (note: string) => void;
+  /** Both omitted: the view is read-only and shows no decision bar. */
+  onApprove?: () => void;
+  onRequestAdjustment?: (note: string) => void;
 };
 
 export function ReviewView({
@@ -202,55 +203,59 @@ export function ReviewView({
         </div>
       )}
 
-      <div
-        className={cn(
-          "flex flex-col gap-3 border-t border-border pt-4",
-          adjusting && "gap-2",
-        )}
-      >
-        {audience === "customer" && (
-          <p className="text-sm font-medium">
-            {t("taskBoard.review.customerQuestion")}
-          </p>
-        )}
-
-        {adjusting ? (
-          <>
-            <Textarea
-              autoFocus
-              aria-label={t("taskBoard.review.adjustmentPlaceholder")}
-              placeholder={t("taskBoard.review.adjustmentPlaceholder")}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("taskBoard.review.adjustmentHint")}
+      {onApprove && onRequestAdjustment && (
+        <div
+          className={cn(
+            "flex flex-col gap-3 border-t border-border pt-4",
+            adjusting && "gap-2",
+          )}
+        >
+          {audience === "customer" && (
+            <p className="text-sm font-medium">
+              {t("taskBoard.review.customerQuestion")}
             </p>
+          )}
+
+          {adjusting ? (
+            <>
+              <Textarea
+                autoFocus
+                aria-label={t("taskBoard.review.adjustmentPlaceholder")}
+                placeholder={t("taskBoard.review.adjustmentPlaceholder")}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("taskBoard.review.adjustmentHint")}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  disabled={note.trim().length === 0}
+                  onClick={() => {
+                    onRequestAdjustment(note.trim());
+                    setNote("");
+                    setAdjusting(false);
+                  }}
+                >
+                  {t("taskBoard.review.adjustmentSend")}
+                </Button>
+                <Button variant="ghost" onClick={() => setAdjusting(false)}>
+                  {t("taskBoard.review.adjustmentCancel")}
+                </Button>
+              </div>
+            </>
+          ) : (
             <div className="flex gap-2">
-              <Button
-                disabled={note.trim().length === 0}
-                onClick={() => {
-                  onRequestAdjustment(note.trim());
-                  setNote("");
-                  setAdjusting(false);
-                }}
-              >
-                {t("taskBoard.review.adjustmentSend")}
+              <Button onClick={onApprove}>
+                {t("taskBoard.review.approve")}
               </Button>
-              <Button variant="ghost" onClick={() => setAdjusting(false)}>
-                {t("taskBoard.review.adjustmentCancel")}
+              <Button variant="outline" onClick={() => setAdjusting(true)}>
+                {t("taskBoard.review.requestAdjustment")}
               </Button>
             </div>
-          </>
-        ) : (
-          <div className="flex gap-2">
-            <Button onClick={onApprove}>{t("taskBoard.review.approve")}</Button>
-            <Button variant="outline" onClick={() => setAdjusting(true)}>
-              {t("taskBoard.review.requestAdjustment")}
-            </Button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

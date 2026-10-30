@@ -126,6 +126,7 @@ import {
   prCardActions,
 } from "./pr-card-actions";
 import { PreviewButton } from "./preview-button";
+import { ConversationViews } from "./conversation-views";
 import { decodeRunFailureReason, lastRunFailure } from "./run-failure";
 import { githubReauthUrl } from "./github-reauth-url";
 import { useRepositories } from "@/hooks/use-git-providers";
@@ -1180,13 +1181,15 @@ function TaskBoardItemEditor({
 
                 {item && (
                   <div className="flex flex-col gap-8">
-                    <ActivitySection
-                      item={item}
-                      members={members}
-                      onOpenThread={(thread) =>
-                        setOpenThreadId(thread.threadId)
-                      }
-                    />
+                    <ConversationViews item={item}>
+                      <ActivitySection
+                        item={item}
+                        members={members}
+                        onOpenThread={(thread) =>
+                          setOpenThreadId(thread.threadId)
+                        }
+                      />
+                    </ConversationViews>
                   </div>
                 )}
               </div>

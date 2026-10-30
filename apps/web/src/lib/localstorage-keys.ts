@@ -26,6 +26,9 @@ export const LOCALSTORAGE_KEYS = {
   taskBoardPrs: (locator: ProjectLocator) => `studio:task-board-prs:${locator}`,
   /** Whether the task feed shows agent-to-agent handoff and run posts. */
   taskFeedBehindTheScenes: () => `studio:task-feed:behind-the-scenes`,
+  /** Which view of a task's conversation the person chose: review, full or
+   *  automatic (by lane). One setting for every task. */
+  taskConversationView: () => `studio:task-conversation-view`,
   /** The assignee filter the org's task board opens on for this user. */
   taskBoardAssignee: (orgId: string, userId: string) =>
     `studio:task-board-assignee:${orgId}:${userId}`,
