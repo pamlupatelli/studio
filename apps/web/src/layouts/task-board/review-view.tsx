@@ -287,7 +287,7 @@ function Block({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {title}

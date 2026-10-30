@@ -143,7 +143,7 @@ export type EvidenceImage = {
 };
 
 const IMAGE_MARKDOWN = /!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/g;
-const SAFE_IMAGE_URL = /^(https?:\/\/|data:image\/(png|jpe?g|gif|webp);)/i;
+const SAFE_IMAGE_URL = /^(https?:\/\/|data:image\/(png|jpe?g|gif|webp|svg\+xml);)/i;
 
 function imageKind(alt: string): EvidenceImage["kind"] {
   const name = normalizeHeading(alt);
