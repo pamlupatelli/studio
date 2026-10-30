@@ -528,4 +528,5 @@ export const taskBoard = {
     "The card goes back to To Do with your note. Someone re-runs the agent.",
   "taskBoard.review.fallbackNotice":
     "The agent did not use the review format. Showing its comment as sent.",
+  "taskBoard.review.actionFailed": "Could not update the card.",
 } as const;

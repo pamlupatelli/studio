@@ -534,4 +534,5 @@ export const taskBoard = {
     "O card volta para To Do com a sua nota. Alguém precisa rodar o agente de novo.",
   "taskBoard.review.fallbackNotice":
     "O agente não usou o formato de revisão. Mostrando o comentário como foi enviado.",
+  "taskBoard.review.actionFailed": "Não foi possível atualizar o card.",
 } satisfies Record<keyof typeof taskBoardEn, string>;

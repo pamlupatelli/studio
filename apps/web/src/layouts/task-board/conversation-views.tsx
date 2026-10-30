@@ -8,11 +8,17 @@
  */
 
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import { Button } from "@decocms/ui/components/button.tsx";
-import { SUPER_AGENT_ASSIGNEE_ID, LANES } from "@decocms/shared/task-board";
+import {
+  LANES,
+  SUPER_AGENT_ASSIGNEE_ID,
+  type CanonicalColumnKey,
+} from "@decocms/shared/task-board";
 import { MemoizedMarkdown } from "@/components/chat/markdown";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useTaskBoardComments } from "@/hooks/use-task-board-comments";
+import { useTaskBoardItemActions } from "@/hooks/use-task-board-items";
 import { useTaskBoardItemPrs } from "@/hooks/use-task-board-item-prs";
 import { LOCALSTORAGE_KEYS } from "@/lib/localstorage-keys";
 import { useT } from "@/i18n/use-t.ts";
@@ -24,6 +30,16 @@ import { pickReviewComment } from "./review-view-model";
 type ViewChoice = "auto" | "review" | "full";
 
 const REVIEW_LANES: string[] = [LANES.review, LANES.qa, LANES.customer];
+
+/** Where an approval sends the card. Only the two people's lanes decide. */
+const NEXT_LANE: Partial<Record<string, CanonicalColumnKey>> = {
+  [LANES.qa]: LANES.customer,
+  [LANES.customer]: LANES.release,
+};
+
+/** A request for adjustment sends the card back to To Do. The agent is not
+ *  dispatched by a lane move, so someone re-runs it by hand. */
+const ADJUSTMENT_LANE: CanonicalColumnKey = "todo";
 
 export function ConversationViews({
   item,
@@ -39,6 +55,7 @@ export function ConversationViews({
   );
   const comments = useTaskBoardComments(item.id);
   const { data: prs } = useTaskBoardItemPrs(item.id);
+  const { update } = useTaskBoardItemActions();
 
   const picked = pickReviewComment(
     comments.threads.flatMap((thread) => [thread, ...thread.replies]),
@@ -56,6 +73,21 @@ export function ConversationViews({
       : choice;
 
   const previewUrl = prs?.find((pr) => pr.previewUrl)?.previewUrl;
+  const nextLane = NEXT_LANE[item.status];
+  const failed = () => toast.error(t("taskBoard.review.actionFailed"));
+
+  const approve = () => {
+    if (!nextLane) return;
+    update.mutate({ id: item.id, status: nextLane }, { onError: failed });
+  };
+  const requestAdjustment = async (note: string) => {
+    try {
+      await comments.post.mutateAsync({ body: note });
+      await update.mutateAsync({ id: item.id, status: ADJUSTMENT_LANE });
+    } catch {
+      failed();
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -94,6 +126,8 @@ export function ConversationViews({
           }
           audience={item.status === LANES.customer ? "customer" : "deco"}
           verifiedByDeco={item.status === LANES.customer}
+          onApprove={nextLane ? approve : undefined}
+          onRequestAdjustment={nextLane ? requestAdjustment : undefined}
           preview={
             previewUrl ? (
               <PreviewButton
