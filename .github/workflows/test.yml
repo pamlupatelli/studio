@@ -252,3 +252,13 @@ jobs:
 
       - name: Run component tests
         run: bun run --cwd=apps/web test:ct
+
+      # Fork-only: keep the screenshots the tests attach so they can be
+      # downloaded from the run page.
+      - name: Upload component test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-test-screenshots
+          path: apps/web/test-results
+          if-no-files-found: ignore
