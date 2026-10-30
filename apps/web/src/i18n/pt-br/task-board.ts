@@ -549,4 +549,6 @@ export const taskBoard = {
   "taskBoard.review.movedTo": "Card movido para {lane}.",
   "taskBoard.review.adjustmentSent":
     "Ajuste pedido. O card voltou para {lane}.",
+  "taskBoard.review.checklistCount": "{count} itens para conferir",
+  "taskBoard.review.cardDetails": "Descrição e subtarefas do card",
 } satisfies Record<keyof typeof taskBoardEn, string>;

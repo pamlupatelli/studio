@@ -543,4 +543,6 @@ export const taskBoard = {
   "taskBoard.review.movedTo": "Card moved to {lane}.",
   "taskBoard.review.adjustmentSent":
     "Adjustment requested. The card is back in {lane}.",
+  "taskBoard.review.checklistCount": "{count} items to check",
+  "taskBoard.review.cardDetails": "Card description and subtasks",
 } as const;

@@ -16,7 +16,7 @@ import { Button } from "@decocms/ui/components/button.tsx";
 import { Checkbox } from "@decocms/ui/components/checkbox.tsx";
 import { Textarea } from "@decocms/ui/components/textarea.tsx";
 import { cn } from "@decocms/ui/lib/utils.ts";
-import { CheckCircle } from "@untitledui/icons";
+import { CheckCircle, Eye, EyeOff } from "@untitledui/icons";
 import { MemoizedMarkdown } from "@/components/chat/markdown";
 import { useT } from "@/i18n/use-t.ts";
 import {
@@ -68,7 +68,7 @@ export function ReviewView({
 }: ReviewViewProps) {
   const t = useT();
   const [checked, setChecked] = useState<Record<number, boolean>>({});
-  const [showChecklist, setShowChecklist] = useState(audience === "deco");
+  const [showChecklist, setShowChecklist] = useState(true);
   const [adjusting, setAdjusting] = useState(false);
   const [note, setNote] = useState("");
 
@@ -147,32 +147,40 @@ export function ReviewView({
             </Block>
           )}
 
-          {audience === "customer" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-fit"
-              aria-expanded={showChecklist}
-              onClick={() => setShowChecklist((open) => !open)}
-            >
-              {showChecklist
-                ? t("taskBoard.review.hideChecklist")
-                : t("taskBoard.review.showChecklist")}
-            </Button>
-          )}
-
-          {showChecklist && (
-            <Block
-              title={t("taskBoard.review.howToCheck")}
-              aside={
-                audience === "deco"
-                  ? t("taskBoard.review.checked", {
-                      done: String(done),
-                      total: String(total),
-                    })
-                  : undefined
-              }
-            >
+          <Block
+            title={t("taskBoard.review.howToCheck")}
+            aside={
+              audience === "deco"
+                ? t("taskBoard.review.checked", {
+                    done: String(done),
+                    total: String(total),
+                  })
+                : t("taskBoard.review.checklistCount", {
+                    count: String(total),
+                  })
+            }
+            action={
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-expanded={showChecklist}
+                aria-label={
+                  showChecklist
+                    ? t("taskBoard.review.hideChecklist")
+                    : t("taskBoard.review.showChecklist")
+                }
+                title={
+                  showChecklist
+                    ? t("taskBoard.review.hideChecklist")
+                    : t("taskBoard.review.showChecklist")
+                }
+                onClick={() => setShowChecklist((open) => !open)}
+              >
+                {showChecklist ? <Eye size={14} /> : <EyeOff size={14} />}
+              </Button>
+            }
+          >
+            {showChecklist && (
               <ul className="flex flex-col gap-2">
                 {sections.howToCheck.map((item, index) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm">
@@ -196,8 +204,8 @@ export function ReviewView({
                   </li>
                 ))}
               </ul>
-            </Block>
-          )}
+            )}
+          </Block>
 
           {sections.limitations && (
             <Block title={t("taskBoard.review.limitations")}>
@@ -280,23 +288,29 @@ export function ReviewView({
 function Block({
   title,
   aside,
+  action,
   children,
 }: {
   title: string;
   aside?: string;
+  /** A control that belongs to the block, shown at the end of its header. */
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {title}
         </h3>
-        {aside && (
-          <span className="text-xs text-muted-foreground">{aside}</span>
-        )}
+        <div className="flex items-center gap-1">
+          {aside && (
+            <span className="text-xs text-muted-foreground">{aside}</span>
+          )}
+          {action}
+        </div>
       </div>
-      <div className="text-sm">{children}</div>
+      {children && <div className="text-sm">{children}</div>}
     </div>
   );
 }

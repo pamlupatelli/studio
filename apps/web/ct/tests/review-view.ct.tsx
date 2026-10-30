@@ -39,7 +39,7 @@ test("request adjustment needs a note and reports it", async ({ mount }) => {
   );
 });
 
-test("customer: one question, checklist collapsed, deco mark visible", async ({
+test("customer: one question, checklist visible, deco mark visible", async ({
   mount,
 }) => {
   const component = await mount(
@@ -49,6 +49,15 @@ test("customer: one question, checklist collapsed, deco mark visible", async ({
   await expect(component.getByText("Is it what you expected?")).toBeVisible();
   await expect(component.getByTestId("review-verified")).toBeVisible();
   await expect(component.getByText("Round 2")).toBeVisible();
+  await expect(component.getByText("Ver a home no celular")).toBeVisible();
+});
+
+test("the eye inside the checklist block hides and shows the items", async ({
+  mount,
+}) => {
+  const component = await mount(<ReviewViewHarness audience="customer" />);
+
+  await component.getByRole("button", { name: "Hide checklist" }).click();
   await expect(component.getByText("Ver a home no celular")).toHaveCount(0);
 
   await component.getByRole("button", { name: "See what was checked" }).click();
