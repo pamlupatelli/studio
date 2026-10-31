@@ -97,20 +97,20 @@ function Table(props: React.HTMLAttributes<HTMLTableElement>) {
   }, [tableToCsv, handleCopy]);
 
   return (
-    <>
-      <div className="flex justify-end items-center">
-        <Button
-          variant="ghost"
-          onClick={handleCopyCsv}
-          aria-label={t("chat.markdown.copyAsCSV")}
-          className="text-muted-foreground hover:text-foreground h-6 text-2xs"
-          type="button"
-        >
-          {t("chat.markdown.copyAsCSV")}
-          {copied ? <Check size={12} /> : <Copy01 size={12} />}
-        </Button>
-      </div>
-      <div className="overflow-x-auto mb-4 rounded-lg border border-border">
+    <div className="group/table relative mb-4">
+      {/* Over the table's corner, not in a row of its own, so the table keeps
+          the space. Always visible where there is no hover. */}
+      <Button
+        variant="ghost"
+        onClick={handleCopyCsv}
+        aria-label={t("chat.markdown.copyAsCSV")}
+        className="absolute top-1 right-1 z-10 h-6 bg-background/90 text-2xs text-muted-foreground opacity-0 transition-opacity group-hover/table:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-100"
+        type="button"
+      >
+        {t("chat.markdown.copyAsCSV")}
+        {copied ? <Check size={12} /> : <Copy01 size={12} />}
+      </Button>
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table
           ref={tableRef}
           {...props}
@@ -119,7 +119,7 @@ function Table(props: React.HTMLAttributes<HTMLTableElement>) {
           {props.children}
         </table>
       </div>
-    </>
+    </div>
   );
 }
 

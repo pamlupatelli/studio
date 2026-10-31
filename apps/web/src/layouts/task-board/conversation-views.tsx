@@ -1,10 +1,10 @@
 /**
  * Chooses between the Review view and the full conversation of a task card.
  *
- * Review is the default in the review lanes (In Review, QA, Customer Approval)
- * when the agent has left a comment for people; the full conversation is the
- * default everywhere else. A choice the person makes is remembered for every
- * card.
+ * Review is the default when the agent's comment for people follows the review
+ * format, and in QA and Customer Approval even when it does not (the decision
+ * lives there). Everywhere else the full conversation is the default. A choice
+ * the person makes is remembered for every card.
  *
  * The switch sits at the top of the card body. Review takes the place of the
  * description and the activity feed, which stay one click away: `children` is
@@ -104,12 +104,14 @@ export function ConversationViews({
     );
   }
 
-  const view =
-    choice === "auto"
-      ? REVIEW_LANES.includes(status)
-        ? "review"
-        : "full"
-      : choice;
+  // The agent's comment is readable as the Review view only when it follows
+  // the format. In the people's lanes the decision lives in that view, so it
+  // opens there even then (showing the comment as written); in In Review there
+  // is nothing to decide, so the full conversation is the better first look.
+  const autoReview =
+    REVIEW_LANES.includes(status) &&
+    (picked.sections !== null || NEXT_LANE[status] !== undefined);
+  const view = choice === "auto" ? (autoReview ? "review" : "full") : choice;
 
   const previewUrl = prs?.find((pr) => pr.previewUrl)?.previewUrl;
   const nextLane = NEXT_LANE[status];

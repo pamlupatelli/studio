@@ -127,3 +127,28 @@ test("customer: sees what the deco team checked", async ({ mount }) => {
   ).toBeVisible();
   await expect(component.getByRole("checkbox")).toHaveCount(0);
 });
+
+const TABLE_COMMENT = `## O que mudou
+X
+
+## Como conferir
+- Y
+
+## Evidências
+| A | B |
+|---|---|
+| 1 | 2 |`;
+
+test("the CSV button sits over the table corner", async ({ mount }) => {
+  const component = await mount(<ReviewViewHarness comment={TABLE_COMMENT} />);
+  const copy = component.getByRole("button", { name: "Copy as CSV" });
+  await expect(copy).toHaveCSS("opacity", "0");
+
+  await component.getByRole("table").hover();
+  await expect(copy).toHaveCSS("opacity", "1");
+
+  // Over the table, not in a row above it.
+  const table = await component.getByRole("table").boundingBox();
+  const button = await copy.boundingBox();
+  expect(button!.y).toBeGreaterThanOrEqual(table!.y);
+});
