@@ -528,10 +528,10 @@ export const taskBoard = {
   "taskBoard.review.showChecklist": "Ver o que foi conferido",
   "taskBoard.review.hideChecklist": "Ocultar lista",
   "taskBoard.review.adjustmentPlaceholder": "O que precisa mudar?",
-  "taskBoard.review.adjustmentSend": "Devolver para To Do",
+  "taskBoard.review.adjustmentSend": "Devolver para In Review",
   "taskBoard.review.adjustmentCancel": "Cancelar",
   "taskBoard.review.adjustmentHint":
-    "O card volta para To Do com a sua nota. Alguém precisa rodar o agente de novo.",
+    "O card volta para In Review com a sua nota. Rode o agente de novo para aplicar.",
   "taskBoard.review.fallbackNotice":
     "O agente não usou o formato de revisão. Mostrando o comentário como foi enviado.",
   "taskBoard.review.actionFailed": "Não foi possível atualizar o card.",
@@ -549,6 +549,16 @@ export const taskBoard = {
   "taskBoard.review.movedTo": "Card movido para {lane}.",
   "taskBoard.review.adjustmentSent":
     "Ajuste pedido. O card voltou para {lane}.",
+  "taskBoard.review.adjustmentTitle": "Ajuste pedido",
+  "taskBoard.review.adjustmentRound": "rodada",
+  "taskBoard.review.originQa": "QA",
+  "taskBoard.review.originCustomer": "Cliente",
+  "taskBoard.review.returnedFrom": "Voltou do {origin} · rodada {n}",
+  "taskBoard.review.returnedNote": "O que precisa mudar",
+  "taskBoard.review.returnedPrevious":
+    "Abaixo está a entrega anterior, antes deste ajuste.",
+  "taskBoard.review.staleNotice":
+    "O agente comentou depois desta entrega. Veja a conversa completa.",
   "taskBoard.review.checklistCount": "{count} itens para conferir",
   "taskBoard.review.cardDetails": "Descrição e subtarefas do card",
 } satisfies Record<keyof typeof taskBoardEn, string>;

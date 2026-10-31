@@ -15,7 +15,7 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@decocms/ui/components/button.tsx";
 import { cn } from "@decocms/ui/lib/utils.ts";
-import { ChevronDown } from "@untitledui/icons";
+import { ChevronDown, ReverseLeft } from "@untitledui/icons";
 import {
   LANES,
   SUPER_AGENT_ASSIGNEE_ID,
@@ -30,7 +30,11 @@ import { useT } from "@/i18n/use-t.ts";
 import { laneHeader, type TaskBoardItem } from "./config";
 import { PreviewButton } from "./preview-button";
 import { ReviewView } from "./review-view";
-import { pickReviewComment } from "./review-view-model";
+import {
+  adjustmentState,
+  formatAdjustment,
+  pickReviewComment,
+} from "./review-view-model";
 
 type ViewChoice = "auto" | "review" | "full";
 
@@ -42,9 +46,16 @@ const NEXT_LANE: Partial<Record<string, CanonicalColumnKey>> = {
   [LANES.customer]: LANES.release,
 };
 
-/** A request for adjustment sends the card back to To Do. The agent is not
- *  dispatched by a lane move, so someone re-runs it by hand. */
-const ADJUSTMENT_LANE: CanonicalColumnKey = "todo";
+/** A request for adjustment sends the card back to In Review with no owner.
+ *  The board already marks that as handed to a person, and a lane move does
+ *  not dispatch the agent, so a person re-runs it. */
+const ADJUSTMENT_LANE: CanonicalColumnKey = LANES.review;
+
+type CardMove = {
+  status: CanonicalColumnKey;
+  /** Clears the owner when null. */
+  assigneeId?: null;
+};
 
 export function ConversationViews({
   item,
@@ -60,7 +71,7 @@ export function ConversationViews({
   status: TaskBoardItem["status"];
   /** Moves the card through the dialog, which keeps its own copy of the lane
    *  and saves it. */
-  onMove: (lane: CanonicalColumnKey) => void;
+  onMove: (next: CardMove) => void;
   /** The card's record (links, activity), shown in the full view. */
   activity: ReactNode;
   /** The card's own body: description and subtasks. */
@@ -75,10 +86,12 @@ export function ConversationViews({
   const comments = useTaskBoardComments(item?.id);
   const { data: prs } = useTaskBoardItemPrs(item?.id);
 
-  const picked = pickReviewComment(
-    comments.threads.flatMap((thread) => [thread, ...thread.replies]),
-    SUPER_AGENT_ASSIGNEE_ID,
-  );
+  const all = comments.threads.flatMap((thread) => [
+    thread,
+    ...thread.replies,
+  ]);
+  const picked = pickReviewComment(all, SUPER_AGENT_ASSIGNEE_ID);
+  const { round, returned } = adjustmentState(all, SUPER_AGENT_ASSIGNEE_ID);
   // Without an agent comment there is nothing to review: the full
   // conversation is the only view, so no switch is offered.
   if (!item || !picked) {
@@ -104,17 +117,30 @@ export function ConversationViews({
 
   const approve = () => {
     if (!nextLane) return;
-    onMove(nextLane);
+    onMove({ status: nextLane });
     toast.success(t("taskBoard.review.movedTo", { lane: lane(nextLane) }));
   };
   const requestAdjustment = async (note: string) => {
+    const body = formatAdjustment(
+      {
+        origin: status === LANES.qa ? "qa" : "customer",
+        round: round + 1,
+        note,
+      },
+      {
+        title: t("taskBoard.review.adjustmentTitle"),
+        qa: t("taskBoard.review.originQa"),
+        customer: t("taskBoard.review.originCustomer"),
+        round: t("taskBoard.review.adjustmentRound"),
+      },
+    );
     try {
-      await comments.post.mutateAsync({ body: note });
+      await comments.post.mutateAsync({ body });
     } catch {
       failed();
       return;
     }
-    onMove(ADJUSTMENT_LANE);
+    onMove({ status: ADJUSTMENT_LANE, assigneeId: null });
     toast.success(
       t("taskBoard.review.adjustmentSent", { lane: lane(ADJUSTMENT_LANE) }),
     );
@@ -131,31 +157,70 @@ export function ConversationViews({
 
   return (
     <div className="flex flex-col">
-      <div
-        role="group"
-        aria-label={t("taskBoard.review.viewLabel")}
-        className="flex w-fit gap-1 pt-4"
-      >
-        <Button
-          size="sm"
-          variant="tab"
-          aria-pressed={view === "review"}
-          onClick={() => setChoice("review")}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-4">
+        <div
+          role="group"
+          aria-label={t("taskBoard.review.viewLabel")}
+          className="flex w-fit gap-1"
         >
-          {t("taskBoard.review.viewReview")}
-        </Button>
-        <Button
-          size="sm"
-          variant="tab"
-          aria-pressed={view === "full"}
-          onClick={() => setChoice("full")}
-        >
-          {t("taskBoard.review.viewFull")}
-        </Button>
+          <Button
+            size="sm"
+            variant="tab"
+            aria-pressed={view === "review"}
+            onClick={() => setChoice("review")}
+          >
+            {t("taskBoard.review.viewReview")}
+          </Button>
+          <Button
+            size="sm"
+            variant="tab"
+            aria-pressed={view === "full"}
+            onClick={() => setChoice("full")}
+          >
+            {t("taskBoard.review.viewFull")}
+          </Button>
+        </div>
+        {returned && (
+          <span
+            data-testid="review-returned"
+            className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning"
+          >
+            <ReverseLeft className="size-3.5" />
+            {t("taskBoard.review.returnedFrom", {
+              origin:
+                returned.origin === "qa"
+                  ? t("taskBoard.review.originQa")
+                  : t("taskBoard.review.originCustomer"),
+              n: String(returned.round),
+            })}
+          </span>
+        )}
       </div>
 
       {view === "review" ? (
         <div className="flex flex-col gap-4 py-4">
+          {returned && (
+            <div
+              data-testid="review-returned-note"
+              className="flex flex-col gap-1 rounded-xl border border-border bg-muted/40 p-4"
+            >
+              <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {t("taskBoard.review.returnedNote")}
+              </h3>
+              <p className="text-sm whitespace-pre-wrap">{returned.note}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("taskBoard.review.returnedPrevious")}
+              </p>
+            </div>
+          )}
+          {picked.hasNewer && (
+            <p
+              data-testid="review-stale"
+              className="text-xs text-muted-foreground"
+            >
+              {t("taskBoard.review.staleNotice")}
+            </p>
+          )}
           <ReviewView
             id={item.id}
             sections={picked.sections}
@@ -167,6 +232,7 @@ export function ConversationViews({
             }
             audience={status === LANES.customer ? "customer" : "deco"}
             verifiedByDeco={status === LANES.customer}
+            round={round}
             stage={t("taskBoard.review.stage", { lane: lane(status) })}
             stageHint={stageHint}
             approveLabel={

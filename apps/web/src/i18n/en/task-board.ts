@@ -522,10 +522,10 @@ export const taskBoard = {
   "taskBoard.review.showChecklist": "See what was checked",
   "taskBoard.review.hideChecklist": "Hide checklist",
   "taskBoard.review.adjustmentPlaceholder": "What needs to change?",
-  "taskBoard.review.adjustmentSend": "Send back to To Do",
+  "taskBoard.review.adjustmentSend": "Send back to In Review",
   "taskBoard.review.adjustmentCancel": "Cancel",
   "taskBoard.review.adjustmentHint":
-    "The card goes back to To Do with your note. Someone re-runs the agent.",
+    "The card goes back to In Review with your note. Re-run the agent to apply it.",
   "taskBoard.review.fallbackNotice":
     "The agent did not use the review format. Showing its comment as sent.",
   "taskBoard.review.actionFailed": "Could not update the card.",
@@ -543,6 +543,16 @@ export const taskBoard = {
   "taskBoard.review.movedTo": "Card moved to {lane}.",
   "taskBoard.review.adjustmentSent":
     "Adjustment requested. The card is back in {lane}.",
+  "taskBoard.review.adjustmentTitle": "Adjustment requested",
+  "taskBoard.review.adjustmentRound": "round",
+  "taskBoard.review.originQa": "QA",
+  "taskBoard.review.originCustomer": "Customer",
+  "taskBoard.review.returnedFrom": "Returned from {origin} · round {n}",
+  "taskBoard.review.returnedNote": "What needs to change",
+  "taskBoard.review.returnedPrevious":
+    "Below is the previous delivery, before this adjustment.",
+  "taskBoard.review.staleNotice":
+    "The agent commented after this delivery. See the full conversation.",
   "taskBoard.review.checklistCount": "{count} items to check",
   "taskBoard.review.cardDetails": "Card description and subtasks",
 } as const;

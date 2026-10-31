@@ -1095,7 +1095,7 @@ function TaskBoardItemEditor({
               <ConversationViews
                 item={item}
                 status={status}
-                onMove={(lane) => patch({ status: lane })}
+                onMove={(next) => patch(next)}
                 activity={
                   item ? (
                     <>

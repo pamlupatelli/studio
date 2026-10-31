@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
+  adjustmentState,
+  formatAdjustment,
   parseReviewSections,
   pickReviewComment,
   splitEvidence,
@@ -109,7 +111,11 @@ describe("pickReviewComment", () => {
       ],
       AGENT,
     );
-    expect(picked).toEqual({ body: "segundo", sections: null });
+    expect(picked).toEqual({
+      body: "segundo",
+      sections: null,
+      hasNewer: false,
+    });
   });
 
   it("ignores people, internal comments and other authors", () => {
@@ -152,5 +158,141 @@ describe("splitEvidence", () => {
 
   it("returns plain text untouched", () => {
     expect(splitEvidence("só texto")).toEqual({ images: [], text: "só texto" });
+  });
+});
+
+describe("pickReviewComment newer comments", () => {
+  const AGENT = "super-agent";
+  const contract = "## O que mudou\nX\n## Como conferir\n- Y";
+  const make = (body: string, createdAt: string) => ({
+    authorId: AGENT,
+    audience: "human",
+    body,
+    createdAt,
+  });
+
+  it("flags a newer agent comment that skipped the format", () => {
+    const picked = pickReviewComment(
+      [
+        make(contract, "2026-10-01T10:00:00Z"),
+        make("Corrigido.", "2026-10-02T10:00:00Z"),
+      ],
+      AGENT,
+    );
+    expect(picked?.sections?.changed).toBe("X");
+    expect(picked?.hasNewer).toBe(true);
+  });
+
+  it("does not flag when the latest comment is the delivery", () => {
+    const picked = pickReviewComment(
+      [make(contract, "2026-10-01T10:00:00Z")],
+      AGENT,
+    );
+    expect(picked?.hasNewer).toBe(false);
+  });
+});
+
+describe("adjustments", () => {
+  const AGENT = "super-agent";
+  const labels = {
+    title: "Ajuste pedido",
+    qa: "QA",
+    customer: "Cliente",
+    round: "rodada",
+  };
+  const person = (body: string, createdAt: string) => ({
+    authorId: "u1",
+    audience: "human",
+    body,
+    createdAt,
+  });
+  const agent = (createdAt: string) => ({
+    authorId: AGENT,
+    audience: "human",
+    body: "## O que mudou\nX\n## Como conferir\n- Y",
+    createdAt,
+  });
+
+  it("round trips a request", () => {
+    const body = formatAdjustment(
+      { origin: "qa", round: 2, note: "O botão está torto" },
+      labels,
+    );
+    expect(body).toBe(
+      "**Ajuste pedido** · QA · rodada 2\n\nO botão está torto",
+    );
+    const state = adjustmentState(
+      [person(body, "2026-10-01T10:00:00Z")],
+      AGENT,
+    );
+    expect(state.round).toBe(2);
+    expect(state.returned).toEqual({
+      origin: "qa",
+      round: 2,
+      note: "O botão está torto",
+      createdAt: "2026-10-01T10:00:00Z",
+    });
+  });
+
+  it("reads the English marker and the customer origin", () => {
+    const state = adjustmentState(
+      [
+        person(
+          "**Adjustment requested** · Customer · round 3\n\nMake it bigger",
+          "2026-10-01T10:00:00Z",
+        ),
+      ],
+      AGENT,
+    );
+    expect(state.round).toBe(3);
+    expect(state.returned?.origin).toBe("customer");
+  });
+
+  it("is no longer returned once the agent delivers again", () => {
+    const body = formatAdjustment(
+      { origin: "customer", round: 2, note: "Mais claro" },
+      labels,
+    );
+    const state = adjustmentState(
+      [
+        agent("2026-10-01T09:00:00Z"),
+        person(body, "2026-10-01T10:00:00Z"),
+        agent("2026-10-01T11:00:00Z"),
+      ],
+      AGENT,
+    );
+    expect(state).toEqual({ round: 2, returned: null });
+  });
+
+  it("starts at round 1 with no requests and ignores the agent's text", () => {
+    expect(adjustmentState([agent("2026-10-01T09:00:00Z")], AGENT)).toEqual({
+      round: 1,
+      returned: null,
+    });
+    const fake = {
+      authorId: AGENT,
+      audience: "human",
+      body: "**Ajuste pedido** · QA · rodada 9\n\nx",
+      createdAt: "2026-10-01T10:00:00Z",
+    };
+    expect(adjustmentState([fake], AGENT).round).toBe(1);
+  });
+
+  it("takes the highest round across several requests", () => {
+    const one = formatAdjustment({ origin: "qa", round: 2, note: "a" }, labels);
+    const two = formatAdjustment(
+      { origin: "customer", round: 3, note: "b" },
+      labels,
+    );
+    const state = adjustmentState(
+      [
+        person(one, "2026-10-01T10:00:00Z"),
+        agent("2026-10-01T11:00:00Z"),
+        person(two, "2026-10-01T12:00:00Z"),
+      ],
+      AGENT,
+    );
+    expect(state.round).toBe(3);
+    expect(state.returned?.note).toBe("b");
   });
 });

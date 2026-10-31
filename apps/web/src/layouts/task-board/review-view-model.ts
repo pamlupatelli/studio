@@ -112,6 +112,9 @@ export type ReviewCommentSource = {
 export type PickedReviewComment = {
   body: string;
   sections: ReviewSections | null;
+  /** The agent commented after the picked delivery without following the
+   *  format, so the full conversation holds something newer. */
+  hasNewer: boolean;
 };
 
 /**
@@ -128,12 +131,14 @@ export function pickReviewComment(
     .filter((c) => c.authorId === agentId && c.audience === "human")
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
-  for (const comment of fromAgent) {
+  for (const [index, comment] of fromAgent.entries()) {
     const sections = parseReviewSections(comment.body);
-    if (sections) return { body: comment.body, sections };
+    if (sections) return { body: comment.body, sections, hasNewer: index > 0 };
   }
   const latest = fromAgent[0];
-  return latest ? { body: latest.body, sections: null } : null;
+  return latest
+    ? { body: latest.body, sections: null, hasNewer: false }
+    : null;
 }
 
 export type EvidenceImage = {
@@ -173,4 +178,84 @@ export function splitEvidence(evidence: string): {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return { images, text };
+}
+
+type AdjustmentOrigin = "qa" | "customer";
+
+type AdjustmentRequest = {
+  origin: AdjustmentOrigin;
+  /** The round the requested work belongs to: 2 for the first adjustment. */
+  round: number;
+  note: string;
+  createdAt: string;
+};
+
+type AdjustmentLabels = {
+  title: string;
+  qa: string;
+  customer: string;
+  round: string;
+};
+
+const MARKER =
+  /^\*\*(?:Ajuste pedido|Adjustment requested)\*\*\s*·\s*(QA|Cliente|Customer)\s*·\s*(?:rodada|round)\s+(\d+)\s*\n+([\s\S]*)$/i;
+
+/**
+ * The comment a request for adjustment is stored as. A fixed first line says
+ * who asked and for which round; the rest is the person's note. The line is
+ * what `adjustmentState` reads back, in either language.
+ */
+export function formatAdjustment(
+  request: Pick<AdjustmentRequest, "origin" | "round" | "note">,
+  labels: AdjustmentLabels,
+): string {
+  const origin = request.origin === "qa" ? labels.qa : labels.customer;
+  return `**${labels.title}** · ${origin} · ${labels.round} ${request.round}\n\n${request.note}`;
+}
+
+function parseAdjustment(
+  comment: ReviewCommentSource,
+): AdjustmentRequest | null {
+  const match = MARKER.exec(comment.body.trim());
+  if (!match) return null;
+  return {
+    origin: match[1]!.toLowerCase() === "qa" ? "qa" : "customer",
+    round: Number(match[2]),
+    note: match[3]!.trim(),
+    createdAt: comment.createdAt,
+  };
+}
+
+type AdjustmentState = {
+  /** The round the card is in: 1 until someone asks for an adjustment. */
+  round: number;
+  /** The latest request while the agent has not delivered since; else null. */
+  returned: AdjustmentRequest | null;
+};
+
+/**
+ * Where a card stands in its back-and-forth, read from its comments. A request
+ * is "returned" until the agent leaves a comment for people after it.
+ */
+export function adjustmentState(
+  comments: ReviewCommentSource[],
+  agentId: string,
+): AdjustmentState {
+  const requests = comments
+    .filter((c) => c.audience === "human" && c.authorId !== agentId)
+    .flatMap((c) => parseAdjustment(c) ?? [])
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  const latest = requests.at(-1);
+  if (!latest) return { round: 1, returned: null };
+
+  const delivered = comments.some(
+    (c) =>
+      c.authorId === agentId &&
+      c.audience === "human" &&
+      Date.parse(c.createdAt) > Date.parse(latest.createdAt),
+  );
+  return {
+    round: Math.max(...requests.map((r) => r.round)),
+    returned: delivered ? null : latest,
+  };
 }
