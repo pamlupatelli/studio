@@ -168,16 +168,45 @@ export function splitEvidence(evidence: string): {
   text: string;
 } {
   const images: EvidenceImage[] = [];
-  const text = evidence
-    .replace(IMAGE_MARKDOWN, (_match, alt: string, url: string) => {
+  const text = dropEmptyTables(
+    evidence.replace(IMAGE_MARKDOWN, (_match, alt: string, url: string) => {
       if (SAFE_IMAGE_URL.test(url)) {
         images.push({ alt, url, kind: imageKind(alt) });
       }
       return "";
-    })
+    }),
+  )
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return { images, text };
+}
+
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+const EMPTY_CELLS = /^[\s|:-]*$/;
+
+/** A table that only held images is left with a header over empty cells once
+ *  the images are lifted out, so its block is dropped. */
+function dropEmptyTables(markdown: string): string {
+  const lines = markdown.split("\n");
+  const kept: string[] = [];
+  let block: string[] = [];
+  const flush = () => {
+    // Header and separator stay only if some body row still has content.
+    const body = block.slice(2);
+    const hollow = block.length > 0 && body.every((l) => EMPTY_CELLS.test(l));
+    if (!hollow) kept.push(...block);
+    block = [];
+  };
+  for (const line of lines) {
+    if (TABLE_ROW.test(line)) {
+      block.push(line);
+    } else {
+      flush();
+      kept.push(line);
+    }
+  }
+  flush();
+  return kept.join("\n");
 }
 
 type AdjustmentOrigin = "qa" | "customer";

@@ -156,6 +156,21 @@ describe("splitEvidence", () => {
     expect(text).toBe("");
   });
 
+  it("drops a table that only held the images", () => {
+    const { images, text } = splitEvidence(
+      "Veja.\n\n| Antes | Depois |\n|---|---|\n| ![Antes](https://x.test/a.png) | ![Depois](https://x.test/b.png) |",
+    );
+    expect(images.map((i) => i.kind)).toEqual(["before", "after"]);
+    expect(text).toBe("Veja.");
+  });
+
+  it("keeps a table that still has text", () => {
+    const { text } = splitEvidence(
+      "| Página | Estado |\n|---|---|\n| Home | ok |",
+    );
+    expect(text).toContain("| Home | ok |");
+  });
+
   it("returns plain text untouched", () => {
     expect(splitEvidence("só texto")).toEqual({ images: [], text: "só texto" });
   });
