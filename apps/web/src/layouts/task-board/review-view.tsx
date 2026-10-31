@@ -275,10 +275,12 @@ export function ReviewView({
         </>
       ) : (
         <div data-testid="review-fallback" className="flex flex-col gap-3">
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <AlertTriangle className="size-3.5 shrink-0" />
-            {t("taskBoard.review.fallbackNotice")}
-          </p>
+          {onApprove && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <AlertTriangle className="size-3.5 shrink-0" />
+              {t("taskBoard.review.fallbackNotice")}
+            </p>
+          )}
           {fallback}
           {preview}
         </div>

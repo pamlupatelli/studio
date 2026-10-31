@@ -539,8 +539,6 @@ export const taskBoard = {
   "taskBoard.review.evidenceBefore": "Antes",
   "taskBoard.review.evidenceAfter": "Depois",
   "taskBoard.review.stage": "Etapa: {lane}",
-  "taskBoard.review.stageHintReview":
-    "Os agentes ainda estão revisando. Nada para decidir ainda.",
   "taskBoard.review.stageHintQa":
     "O time da deco confere o trabalho. Aprovar envia para o cliente.",
   "taskBoard.review.stageHintCustomer":

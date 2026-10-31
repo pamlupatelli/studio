@@ -168,9 +168,7 @@ export function ConversationViews({
       ? t("taskBoard.review.stageHintQa")
       : status === LANES.customer
         ? t("taskBoard.review.stageHintCustomer")
-        : status === LANES.review
-          ? t("taskBoard.review.stageHintReview")
-          : undefined;
+        : undefined;
 
   return (
     <div className="flex flex-col">
@@ -197,7 +195,7 @@ export function ConversationViews({
             {t("taskBoard.review.viewFull")}
           </Button>
         </div>
-        {REVIEW_LANES.includes(status) && picked.sections === null && (
+        {nextLane && picked.sections === null && (
           <span
             data-testid="review-out-of-format"
             className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning"
@@ -260,7 +258,11 @@ export function ConversationViews({
             verifiedByDeco={status === LANES.customer}
             round={round}
             verification={verification ?? undefined}
-            stage={t("taskBoard.review.stage", { lane: lane(status) })}
+            stage={
+              nextLane
+                ? t("taskBoard.review.stage", { lane: lane(status) })
+                : undefined
+            }
             stageHint={stageHint}
             approveLabel={
               status === LANES.qa
