@@ -214,9 +214,7 @@ export function ReviewView({
                         •
                       </span>
                     )}
-                    <span
-                      className={item.done ? undefined : "text-muted-foreground"}
-                    >
+                    <span className={cn(!item.done && "text-muted-foreground")}>
                       {item.text}
                       {!item.done && ` (${t("taskBoard.review.notChecked")})`}
                     </span>

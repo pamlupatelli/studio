@@ -89,10 +89,7 @@ export function ConversationViews({
   const comments = useTaskBoardComments(item?.id);
   const { data: prs } = useTaskBoardItemPrs(item?.id);
 
-  const all = comments.threads.flatMap((thread) => [
-    thread,
-    ...thread.replies,
-  ]);
+  const all = comments.threads.flatMap((thread) => [thread, ...thread.replies]);
   const picked = pickReviewComment(all, SUPER_AGENT_ASSIGNEE_ID);
   const { round, returned } = adjustmentState(all, SUPER_AGENT_ASSIGNEE_ID);
   const verification = decoVerification(all, SUPER_AGENT_ASSIGNEE_ID);

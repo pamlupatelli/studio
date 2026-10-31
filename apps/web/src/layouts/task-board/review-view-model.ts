@@ -136,9 +136,7 @@ export function pickReviewComment(
     if (sections) return { body: comment.body, sections, hasNewer: index > 0 };
   }
   const latest = fromAgent[0];
-  return latest
-    ? { body: latest.body, sections: null, hasNewer: false }
-    : null;
+  return latest ? { body: latest.body, sections: null, hasNewer: false } : null;
 }
 
 export type EvidenceImage = {

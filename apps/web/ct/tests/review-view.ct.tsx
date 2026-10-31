@@ -27,7 +27,9 @@ test("request adjustment needs a note and reports it", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
   await component.getByRole("button", { name: "Request adjustment" }).click();
 
-  const send = component.getByRole("button", { name: "Send back to In Review" });
+  const send = component.getByRole("button", {
+    name: "Send back to In Review",
+  });
   await expect(send).toBeDisabled();
 
   await component
