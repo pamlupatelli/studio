@@ -156,7 +156,7 @@ test("the CSV button sits in the evidence header", async ({ mount }) => {
 
 test("a comment outside the format is flagged", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness comment={FREE_COMMENT} />);
-  await expect(component.getByRole("alert")).toContainText(
-    "did not write this in the expected format",
+  await expect(component.getByTestId("review-fallback")).toContainText(
+    "did not use the expected format",
   );
 });
