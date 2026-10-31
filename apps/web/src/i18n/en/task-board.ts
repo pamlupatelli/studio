@@ -553,6 +553,9 @@ export const taskBoard = {
     "Below is the previous delivery, before this adjustment.",
   "taskBoard.review.staleNotice":
     "The agent commented after this delivery. See the full conversation.",
+  "taskBoard.review.verificationTitle": "Checked by deco",
+  "taskBoard.review.decoChecklist": "What deco checked",
+  "taskBoard.review.notChecked": "not checked",
   "taskBoard.review.checklistCount": "{count} items to check",
   "taskBoard.review.cardDetails": "Card description and subtasks",
 } as const;

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import {
   adjustmentState,
+  decoVerification,
   formatAdjustment,
+  formatVerification,
   parseReviewSections,
   pickReviewComment,
   splitEvidence,
@@ -309,5 +311,67 @@ describe("adjustments", () => {
     );
     expect(state.round).toBe(3);
     expect(state.returned?.note).toBe("b");
+  });
+});
+
+describe("deco verification", () => {
+  const AGENT = "super-agent";
+  const delivery = (createdAt: string) => ({
+    authorId: AGENT,
+    audience: "human",
+    body: "## O que mudou\nX\n## Como conferir\n- Y",
+    createdAt,
+  });
+  const person = (body: string, createdAt: string) => ({
+    authorId: "u1",
+    audience: "human",
+    body,
+    createdAt,
+  });
+  const items = [
+    { text: "Ver o banner", done: true },
+    { text: "Ver no celular", done: false },
+  ];
+
+  it("round trips the checked items", () => {
+    const body = formatVerification(items, "Conferido pela deco");
+    expect(body).toBe(
+      "**Conferido pela deco**\n\n- [x] Ver o banner\n- [ ] Ver no celular",
+    );
+    expect(
+      decoVerification(
+        [
+          delivery("2026-10-01T09:00:00Z"),
+          person(body, "2026-10-01T10:00:00Z"),
+        ],
+        AGENT,
+      ),
+    ).toEqual(items);
+  });
+
+  it("starts over when the agent delivers again", () => {
+    const body = formatVerification(items, "Checked by deco");
+    expect(
+      decoVerification(
+        [
+          person(body, "2026-10-01T10:00:00Z"),
+          delivery("2026-10-01T11:00:00Z"),
+        ],
+        AGENT,
+      ),
+    ).toBeNull();
+  });
+
+  it("ignores the agent's text and comments without the marker", () => {
+    const body = formatVerification(items, "Conferido pela deco");
+    expect(
+      decoVerification(
+        [
+          { ...delivery("2026-10-01T10:00:00Z"), body },
+          person("Parece bom", "2026-10-01T11:00:00Z"),
+        ],
+        AGENT,
+      ),
+    ).toBeNull();
   });
 });

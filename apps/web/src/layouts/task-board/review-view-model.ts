@@ -288,3 +288,59 @@ export function adjustmentState(
     returned: delivered ? null : latest,
   };
 }
+
+export type CheckedItem = { text: string; done: boolean };
+
+const VERIFIED_MARKER =
+  /^\*\*(?:Conferido pela deco|Checked by deco)\*\*\s*\n+([\s\S]*)$/i;
+
+/**
+ * The comment that records what the deco team checked when it approved in QA,
+ * so the client can see it. One task-list line per item of the checklist.
+ */
+export function formatVerification(
+  items: CheckedItem[],
+  title: string,
+): string {
+  const lines = items.map((i) => `- [${i.done ? "x" : " "}] ${i.text}`);
+  return `**${title}**\n\n${lines.join("\n")}`;
+}
+
+function parseVerification(body: string): CheckedItem[] | null {
+  const match = VERIFIED_MARKER.exec(body.trim());
+  if (!match) return null;
+  const items: CheckedItem[] = [];
+  for (const line of match[1]!.split("\n")) {
+    const item = /^\s*-\s+\[([ xX])\]\s+(.+)$/.exec(line);
+    if (item) items.push({ done: item[1] !== " ", text: item[2]!.trim() });
+  }
+  return items.length > 0 ? items : null;
+}
+
+/**
+ * What the deco team checked for the current delivery: the latest record by a
+ * person, and only if it is newer than the agent's latest comment for people.
+ * A new delivery starts the check over.
+ */
+export function decoVerification(
+  comments: ReviewCommentSource[],
+  agentId: string,
+): CheckedItem[] | null {
+  const delivered = comments
+    .filter((c) => c.authorId === agentId && c.audience === "human")
+    .map((c) => Date.parse(c.createdAt));
+  const since = delivered.length > 0 ? Math.max(...delivered) : 0;
+  const records = comments
+    .filter(
+      (c) =>
+        c.authorId !== agentId &&
+        c.audience === "human" &&
+        Date.parse(c.createdAt) > since,
+    )
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  for (const record of records) {
+    const items = parseVerification(record.body);
+    if (items) return items;
+  }
+  return null;
+}

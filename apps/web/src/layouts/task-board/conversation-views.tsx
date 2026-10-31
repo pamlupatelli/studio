@@ -32,8 +32,11 @@ import { PreviewButton } from "./preview-button";
 import { ReviewView } from "./review-view";
 import {
   adjustmentState,
+  decoVerification,
   formatAdjustment,
+  formatVerification,
   pickReviewComment,
+  type CheckedItem,
 } from "./review-view-model";
 
 type ViewChoice = "auto" | "review" | "full";
@@ -92,6 +95,7 @@ export function ConversationViews({
   ]);
   const picked = pickReviewComment(all, SUPER_AGENT_ASSIGNEE_ID);
   const { round, returned } = adjustmentState(all, SUPER_AGENT_ASSIGNEE_ID);
+  const verification = decoVerification(all, SUPER_AGENT_ASSIGNEE_ID);
   // Without an agent comment there is nothing to review: the full
   // conversation is the only view, so no switch is offered.
   if (!item || !picked) {
@@ -115,8 +119,22 @@ export function ConversationViews({
   const lane = (key: string) => laneHeader(key, t).label;
   const failed = () => toast.error(t("taskBoard.review.actionFailed"));
 
-  const approve = () => {
+  const approve = async (checks: CheckedItem[]) => {
     if (!nextLane) return;
+    // The deco team's approval leaves a record the client can read.
+    if (status === LANES.qa && checks.length > 0) {
+      try {
+        await comments.post.mutateAsync({
+          body: formatVerification(
+            checks,
+            t("taskBoard.review.verificationTitle"),
+          ),
+        });
+      } catch {
+        failed();
+        return;
+      }
+    }
     onMove({ status: nextLane });
     toast.success(t("taskBoard.review.movedTo", { lane: lane(nextLane) }));
   };
@@ -233,6 +251,7 @@ export function ConversationViews({
             audience={status === LANES.customer ? "customer" : "deco"}
             verifiedByDeco={status === LANES.customer}
             round={round}
+            verification={verification ?? undefined}
             stage={t("taskBoard.review.stage", { lane: lane(status) })}
             stageHint={stageHint}
             approveLabel={

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ReviewView } from "@/layouts/task-board/review-view";
 import {
   parseReviewSections,
+  type CheckedItem,
   type ReviewAudience,
 } from "@/layouts/task-board/review-view-model";
 
@@ -42,13 +43,16 @@ export function ReviewViewHarness({
   comment = CONTRACT_COMMENT,
   verifiedByDeco = false,
   round = 1,
+  verification,
 }: {
   audience?: ReviewAudience;
   comment?: string;
   verifiedByDeco?: boolean;
   round?: number;
+  verification?: CheckedItem[];
 }) {
   const [approved, setApproved] = useState(0);
+  const [checks, setChecks] = useState<CheckedItem[]>([]);
   const [adjustments, setAdjustments] = useState<string[]>([]);
   const sections = parseReviewSections(comment);
 
@@ -64,12 +68,17 @@ export function ReviewViewHarness({
         agentChecks={5}
         stage="Stage: QA"
         stageHint="The deco team checks the work."
-        onApprove={() => setApproved((n) => n + 1)}
+        verification={verification}
+        onApprove={(reported) => {
+          setApproved((n) => n + 1);
+          setChecks(reported);
+        }}
         onRequestAdjustment={(note) =>
           setAdjustments((prev) => [...prev, note])
         }
       />
       <pre data-testid="approved">{approved}</pre>
+      <pre data-testid="checks">{JSON.stringify(checks)}</pre>
       <pre data-testid="adjustments">{JSON.stringify(adjustments)}</pre>
     </div>
   );

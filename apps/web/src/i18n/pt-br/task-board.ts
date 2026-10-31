@@ -559,6 +559,9 @@ export const taskBoard = {
     "Abaixo está a entrega anterior, antes deste ajuste.",
   "taskBoard.review.staleNotice":
     "O agente comentou depois desta entrega. Veja a conversa completa.",
+  "taskBoard.review.verificationTitle": "Conferido pela deco",
+  "taskBoard.review.decoChecklist": "O que a deco conferiu",
+  "taskBoard.review.notChecked": "não conferido",
   "taskBoard.review.checklistCount": "{count} itens para conferir",
   "taskBoard.review.cardDetails": "Descrição e subtarefas do card",
 } satisfies Record<keyof typeof taskBoardEn, string>;

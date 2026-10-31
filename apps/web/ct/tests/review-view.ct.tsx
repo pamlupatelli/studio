@@ -27,7 +27,7 @@ test("request adjustment needs a note and reports it", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
   await component.getByRole("button", { name: "Request adjustment" }).click();
 
-  const send = component.getByRole("button", { name: "Send back to To Do" });
+  const send = component.getByRole("button", { name: "Send back to In Review" });
   await expect(send).toBeDisabled();
 
   await component
@@ -93,4 +93,35 @@ test("lays out labelled before and after images side by side", async ({
   await expect(pair.getByRole("img")).toHaveCount(2);
   await expect(pair.getByText("Before")).toBeVisible();
   await expect(pair.getByText("After")).toBeVisible();
+});
+
+test("QA: approving reports what was ticked", async ({ mount }) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  await component.getByRole("checkbox").first().click();
+  await component.getByRole("button", { name: "Approve" }).click();
+
+  const reported = JSON.parse(
+    (await component.getByTestId("checks").textContent()) ?? "[]",
+  ) as { text: string; done: boolean }[];
+  expect(reported.map((item) => item.done)).toEqual([true, false, false]);
+});
+
+test("customer: sees what the deco team checked", async ({ mount }) => {
+  const component = await mount(
+    <ReviewViewHarness
+      audience="customer"
+      verifiedByDeco
+      verification={[
+        { text: "Abrir a home e ver o novo banner", done: true },
+        { text: "Ver a home no celular", done: false },
+      ]}
+    />,
+  );
+
+  await expect(component.getByText("What deco checked")).toBeVisible();
+  await expect(component.getByText("1 of 2 checked")).toBeVisible();
+  await expect(
+    component.getByText("Ver a home no celular (not checked)"),
+  ).toBeVisible();
+  await expect(component.getByRole("checkbox")).toHaveCount(0);
 });

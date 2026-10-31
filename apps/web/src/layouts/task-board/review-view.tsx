@@ -21,6 +21,7 @@ import { MemoizedMarkdown } from "@/components/chat/markdown";
 import { useT } from "@/i18n/use-t.ts";
 import {
   splitEvidence,
+  type CheckedItem,
   type EvidenceImage,
   type ReviewAudience,
   type ReviewSections,
@@ -44,10 +45,14 @@ export type ReviewViewProps = {
   /** Where the card is and what a decision here does, in the person's words. */
   stage?: string;
   stageHint?: string;
+  /** What the deco team checked for this delivery, shown to the client in
+   *  place of the plain checklist. */
+  verification?: CheckedItem[];
   /** Spells out what Approve does in this stage. */
   approveLabel?: string;
-  /** Both omitted: the view is read-only and shows no decision bar. */
-  onApprove?: () => void;
+  /** Both omitted: the view is read-only and shows no decision bar. Reports
+   *  the checklist as the person left it. */
+  onApprove?: (checks: CheckedItem[]) => void;
   onRequestAdjustment?: (note: string) => void;
 };
 
@@ -62,6 +67,7 @@ export function ReviewView({
   preview,
   stage,
   stageHint,
+  verification,
   approveLabel,
   onApprove,
   onRequestAdjustment,
@@ -74,6 +80,8 @@ export function ReviewView({
 
   const total = sections?.howToCheck.length ?? 0;
   const done = Object.values(checked).filter(Boolean).length;
+  const decoDone = verification?.filter((item) => item.done).length ?? 0;
+  const showVerification = audience === "customer" && verification;
 
   return (
     <section
@@ -148,16 +156,25 @@ export function ReviewView({
           )}
 
           <Block
-            title={t("taskBoard.review.howToCheck")}
+            title={
+              showVerification
+                ? t("taskBoard.review.decoChecklist")
+                : t("taskBoard.review.howToCheck")
+            }
             aside={
-              audience === "deco"
+              showVerification
                 ? t("taskBoard.review.checked", {
-                    done: String(done),
-                    total: String(total),
+                    done: String(decoDone),
+                    total: String(verification.length),
                   })
-                : t("taskBoard.review.checklistCount", {
-                    count: String(total),
-                  })
+                : audience === "deco"
+                  ? t("taskBoard.review.checked", {
+                      done: String(done),
+                      total: String(total),
+                    })
+                  : t("taskBoard.review.checklistCount", {
+                      count: String(total),
+                    })
             }
             action={
               <Button
@@ -180,7 +197,34 @@ export function ReviewView({
               </Button>
             }
           >
-            {showChecklist && (
+            {showChecklist && showVerification && (
+              <ul
+                data-testid="review-deco-checklist"
+                className="flex flex-col gap-2"
+              >
+                {verification.map((item) => (
+                  <li
+                    key={item.text}
+                    className="flex items-start gap-2 text-sm"
+                  >
+                    {item.done ? (
+                      <CheckCircle className="mt-0.5 size-4 shrink-0 text-success" />
+                    ) : (
+                      <span className="mt-0.5 size-4 shrink-0 text-center text-muted-foreground">
+                        •
+                      </span>
+                    )}
+                    <span
+                      className={item.done ? undefined : "text-muted-foreground"}
+                    >
+                      {item.text}
+                      {!item.done && ` (${t("taskBoard.review.notChecked")})`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {showChecklist && !showVerification && (
               <ul className="flex flex-col gap-2">
                 {sections.howToCheck.map((item, index) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm">
@@ -271,7 +315,16 @@ export function ReviewView({
             </>
           ) : (
             <div className="flex gap-2">
-              <Button onClick={onApprove}>
+              <Button
+                onClick={() =>
+                  onApprove(
+                    (sections?.howToCheck ?? []).map((text, index) => ({
+                      text,
+                      done: checked[index] === true,
+                    })),
+                  )
+                }
+              >
                 {approveLabel ?? t("taskBoard.review.approve")}
               </Button>
               <Button variant="outline" onClick={() => setAdjusting(true)}>
