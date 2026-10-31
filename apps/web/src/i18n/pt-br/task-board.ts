@@ -533,7 +533,8 @@ export const taskBoard = {
   "taskBoard.review.adjustmentHint":
     "O card volta para In Review com a sua nota. Rode o agente de novo para aplicar.",
   "taskBoard.review.fallbackNotice":
-    "O agente não usou o formato de revisão. Mostrando o comentário como foi enviado.",
+    "O agente não escreveu isto no formato esperado. O comentário aparece como foi enviado. Peça um ajuste ou abra a conversa completa.",
+  "taskBoard.review.outOfFormat": "Agente fora do formato",
   "taskBoard.review.actionFailed": "Não foi possível atualizar o card.",
   "taskBoard.review.evidenceBefore": "Antes",
   "taskBoard.review.evidenceAfter": "Depois",

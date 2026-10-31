@@ -139,16 +139,24 @@ X
 |---|---|
 | 1 | 2 |`;
 
-test("the CSV button sits over the table corner", async ({ mount }) => {
+test("the CSV button sits in the evidence header", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness comment={TABLE_COMMENT} />);
   const copy = component.getByRole("button", { name: "Copy as CSV" });
-  await expect(copy).toHaveCSS("opacity", "0");
+  await expect(copy).toHaveCount(1);
 
-  await component.getByRole("table").hover();
-  await expect(copy).toHaveCSS("opacity", "1");
-
-  // Over the table, not in a row above it.
-  const table = await component.getByRole("table").boundingBox();
+  // Same row as the block title, above the table.
+  const title = await component
+    .getByText("Evidence", { exact: true })
+    .boundingBox();
   const button = await copy.boundingBox();
-  expect(button!.y).toBeGreaterThanOrEqual(table!.y);
+  const table = await component.getByRole("table").boundingBox();
+  expect(Math.abs(button!.y - title!.y)).toBeLessThan(24);
+  expect(button!.y + button!.height).toBeLessThanOrEqual(table!.y);
+});
+
+test("a comment outside the format is flagged", async ({ mount }) => {
+  const component = await mount(<ReviewViewHarness comment={FREE_COMMENT} />);
+  await expect(component.getByRole("alert")).toContainText(
+    "did not write this in the expected format",
+  );
 });

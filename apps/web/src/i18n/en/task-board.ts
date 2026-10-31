@@ -527,7 +527,8 @@ export const taskBoard = {
   "taskBoard.review.adjustmentHint":
     "The card goes back to In Review with your note. Re-run the agent to apply it.",
   "taskBoard.review.fallbackNotice":
-    "The agent did not use the review format. Showing its comment as sent.",
+    "The agent did not write this in the expected format. Its comment is shown as sent. Ask for an adjustment or open the full conversation.",
+  "taskBoard.review.outOfFormat": "Agent outside the format",
   "taskBoard.review.actionFailed": "Could not update the card.",
   "taskBoard.review.evidenceBefore": "Before",
   "taskBoard.review.evidenceAfter": "After",

@@ -15,7 +15,7 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@decocms/ui/components/button.tsx";
 import { cn } from "@decocms/ui/lib/utils.ts";
-import { ChevronDown, ReverseLeft } from "@untitledui/icons";
+import { AlertTriangle, ChevronDown, ReverseLeft } from "@untitledui/icons";
 import {
   LANES,
   SUPER_AGENT_ASSIGNEE_ID,
@@ -197,6 +197,15 @@ export function ConversationViews({
             {t("taskBoard.review.viewFull")}
           </Button>
         </div>
+        {REVIEW_LANES.includes(status) && picked.sections === null && (
+          <span
+            data-testid="review-out-of-format"
+            className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning"
+          >
+            <AlertTriangle className="size-3.5" />
+            {t("taskBoard.review.outOfFormat")}
+          </span>
+        )}
         {returned && (
           <span
             data-testid="review-returned"

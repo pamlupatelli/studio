@@ -1,6 +1,13 @@
 /* eslint-disable ban-memoization/ban-memoization */
 import { marked, type Token } from "marked";
-import React, { memo, useCallback, useContext, useMemo, useRef } from "react";
+import React, {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -67,50 +74,57 @@ function LazyHighlighter({
   );
 }
 
+/** A table's cells as CSV text. */
+export function tableToCsv(table: HTMLTableElement | null): string {
+  if (!table) return "";
+  const rows = Array.from(table.querySelectorAll("tr"));
+  return rows
+    .map((row) =>
+      Array.from(row.querySelectorAll("th,td"))
+        .map((cell) => {
+          let text = cell.textContent || "";
+          text = text.replace(/"/g, '""');
+          if (text.search(/([",\n])/g) >= 0) {
+            text = `"${text}"`;
+          }
+          return text;
+        })
+        .join(","),
+    )
+    .join("\n");
+}
+
+/** Lets a host that offers its own "copy as CSV" hide the one above each table. */
+export const TableCopyContext = createContext(true);
+
 function Table(props: React.HTMLAttributes<HTMLTableElement>) {
   const t = useT();
   const tableRef = useRef<HTMLTableElement>(null);
   const { handleCopy, copied } = useCopy();
-
-  const tableToCsv = useCallback((table: HTMLTableElement | null): string => {
-    if (!table) return "";
-    const rows = Array.from(table.querySelectorAll("tr"));
-    return rows
-      .map((row) =>
-        Array.from(row.querySelectorAll("th,td"))
-          .map((cell) => {
-            let text = cell.textContent || "";
-            text = text.replace(/"/g, '""');
-            if (text.search(/([",\n])/g) >= 0) {
-              text = `"${text}"`;
-            }
-            return text;
-          })
-          .join(","),
-      )
-      .join("\n");
-  }, []);
+  const showCopy = useContext(TableCopyContext);
 
   const handleCopyCsv = useCallback(async () => {
     const csv = tableToCsv(tableRef.current);
     await handleCopy(csv);
-  }, [tableToCsv, handleCopy]);
+  }, [handleCopy]);
 
   return (
-    <div className="group/table relative mb-4">
-      {/* Over the table's corner, not in a row of its own, so the table keeps
-          the space. Always visible where there is no hover. */}
-      <Button
-        variant="ghost"
-        onClick={handleCopyCsv}
-        aria-label={t("chat.markdown.copyAsCSV")}
-        className="absolute top-1 right-1 z-10 h-6 bg-background/90 text-2xs text-muted-foreground opacity-0 transition-opacity group-hover/table:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:opacity-100"
-        type="button"
-      >
-        {t("chat.markdown.copyAsCSV")}
-        {copied ? <Check size={12} /> : <Copy01 size={12} />}
-      </Button>
-      <div className="overflow-x-auto rounded-lg border border-border">
+    <>
+      {showCopy && (
+        <div className="flex justify-end items-center">
+          <Button
+            variant="ghost"
+            onClick={handleCopyCsv}
+            aria-label={t("chat.markdown.copyAsCSV")}
+            className="text-muted-foreground hover:text-foreground h-6 text-2xs"
+            type="button"
+          >
+            {t("chat.markdown.copyAsCSV")}
+            {copied ? <Check size={12} /> : <Copy01 size={12} />}
+          </Button>
+        </div>
+      )}
+      <div className="overflow-x-auto mb-4 rounded-lg border border-border">
         <table
           ref={tableRef}
           {...props}
@@ -119,7 +133,7 @@ function Table(props: React.HTMLAttributes<HTMLTableElement>) {
           {props.children}
         </table>
       </div>
-    </div>
+    </>
   );
 }
 

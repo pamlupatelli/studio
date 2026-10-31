@@ -11,13 +11,25 @@
  * deco" mark and one question, with the checklist tucked away.
  */
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@decocms/ui/components/button.tsx";
 import { Checkbox } from "@decocms/ui/components/checkbox.tsx";
 import { Textarea } from "@decocms/ui/components/textarea.tsx";
 import { cn } from "@decocms/ui/lib/utils.ts";
-import { CheckCircle, Eye, EyeOff } from "@untitledui/icons";
-import { MemoizedMarkdown } from "@/components/chat/markdown";
+import { useCopy } from "@decocms/ui/hooks/use-copy.ts";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle,
+  Copy01,
+  Eye,
+  EyeOff,
+} from "@untitledui/icons";
+import {
+  MemoizedMarkdown,
+  TableCopyContext,
+  tableToCsv,
+} from "@/components/chat/markdown";
 import { useT } from "@/i18n/use-t.ts";
 import {
   splitEvidence,
@@ -149,10 +161,11 @@ export function ReviewView({
           </Block>
 
           {(sections.evidence || preview) && (
-            <Block title={t("taskBoard.review.evidence")}>
-              <Evidence id={id} evidence={sections.evidence} />
-              {preview && <div className="mt-3">{preview}</div>}
-            </Block>
+            <EvidenceBlock
+              id={id}
+              evidence={sections.evidence}
+              preview={preview}
+            />
           )}
 
           <Block
@@ -262,9 +275,13 @@ export function ReviewView({
         </>
       ) : (
         <div data-testid="review-fallback" className="flex flex-col gap-3">
-          <p className="text-xs text-muted-foreground">
-            {t("taskBoard.review.fallbackNotice")}
-          </p>
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm"
+          >
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <p>{t("taskBoard.review.fallbackNotice")}</p>
+          </div>
           {fallback}
           {preview}
         </div>
@@ -363,6 +380,54 @@ function Block({
       </div>
       {children && <div className="text-sm">{children}</div>}
     </div>
+  );
+}
+
+/** The evidence block. Its tables get one "copy as CSV" in the block's header,
+ *  in place of the one the markdown shows above each table. */
+function EvidenceBlock({
+  id,
+  evidence,
+  preview,
+}: {
+  id: string;
+  evidence?: string;
+  preview?: ReactNode;
+}) {
+  const t = useT();
+  const body = useRef<HTMLDivElement>(null);
+  const { handleCopy, copied } = useCopy();
+  const hasTable = /\|\s*:?-{3,}/.test(evidence ?? "");
+
+  const copy = () => {
+    const tables = Array.from(body.current?.querySelectorAll("table") ?? []);
+    void handleCopy(tables.map((table) => tableToCsv(table)).join("\n\n"));
+  };
+
+  return (
+    <Block
+      title={t("taskBoard.review.evidence")}
+      action={
+        hasTable ? (
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-muted-foreground"
+            onClick={copy}
+          >
+            {t("chat.markdown.copyAsCSV")}
+            {copied ? <Check size={12} /> : <Copy01 size={12} />}
+          </Button>
+        ) : undefined
+      }
+    >
+      <div ref={body}>
+        <TableCopyContext.Provider value={false}>
+          <Evidence id={id} evidence={evidence} />
+        </TableCopyContext.Provider>
+      </div>
+      {preview && <div className="mt-3">{preview}</div>}
+    </Block>
   );
 }
 
