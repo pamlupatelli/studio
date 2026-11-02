@@ -14,6 +14,10 @@ adds no new storage.
 - **What changed.** The latest comment the agent left for people, split into
   sections. Before/after images sit side by side. When the comment does not
   follow the format, the view shows it as written and says so.
+- **Preview.** When the card has a pull request with a deploy preview, the
+  evidence block shows the preview button, so the person can open the change
+  without leaving the card. Pull requests are read live from GitHub, so a card
+  without one, such as a seeded demo card, shows no button.
 - **Decisions.** Approve moves QA → Customer Approval → Ready for Deployment.
   Request adjustment sends the card to **In Review** with no owner, so the
   board's existing "Needs you" badge applies, and records the request.
