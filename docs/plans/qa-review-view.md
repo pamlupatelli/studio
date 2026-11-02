@@ -66,8 +66,10 @@ Not built here because they belong to the platform:
    the board card.
 4. **Required fields in the review decision schema**, so that "what changed" and
    "how to check" are guaranteed rather than parsed.
-5. **Business rules.** "How to check" is whatever the agent lists. A project-level
-   source of agreed rules would let the view check against them.
+5. **Checking against what was agreed.** "How to check" is written by the agent from
+   the card, so the approver checks against the agent's reading of the request. Showing
+   the card's original request next to the checklist would let them compare. Rules that
+   apply to a whole project would be a later step.
 6. **Telling people it is their turn.** There is no notification when a card
    enters QA or Customer Approval, and the board marks only unowned In Review
    cards.
