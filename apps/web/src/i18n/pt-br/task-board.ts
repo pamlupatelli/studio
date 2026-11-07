@@ -541,10 +541,18 @@ export const taskBoard = {
   "taskBoard.review.verifiedCount": "{done} de {total} verificados",
   "taskBoard.review.checkFailed": "falhou",
   "taskBoard.review.checkUnverified": "não verificado",
+  "taskBoard.review.checkPassed": "passou",
+  "taskBoard.review.allUnverified":
+    "O agente não informou o resultado destes checks.",
+  "taskBoard.review.verifiedByDecoHint":
+    "Verificado pelo Super Agent e revisado pela equipe deco",
+  "taskBoard.review.checkedByBoth":
+    "O Super Agent testou · a equipe deco revisou",
   "taskBoard.review.disagree": "Discordo",
   "taskBoard.review.disagreeUndo": "Desfazer",
   "taskBoard.review.disagreePlaceholder": "O que está errado?",
-  "taskBoard.review.pinHint": "Clique na imagem para marcar o que precisa mudar.",
+  "taskBoard.review.pinHint":
+    "Clique na imagem para marcar o que precisa mudar.",
   "taskBoard.review.pinImage": "Marcar um ponto em {name}",
   "taskBoard.review.pinLabel": "Pin {n}",
   "taskBoard.review.pinPlaceholder": "O que precisa mudar aqui?",

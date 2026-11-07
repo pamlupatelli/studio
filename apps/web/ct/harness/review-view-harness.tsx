@@ -6,8 +6,13 @@ import {
   type ReviewAudience,
 } from "@/layouts/task-board/review-view-model";
 
-const PIXEL =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+/** Sized and distinct, so each image has a real box to click and its own pins. */
+const swatch = (color: string) =>
+  `data:image/svg+xml;base64,${btoa(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="${color}"/></svg>`,
+  )}`;
+const BEFORE = swatch("#9ca3af");
+const AFTER = swatch("#4ade80");
 
 /** Synthetic agent comment that follows the review contract. */
 const CONTRACT_COMMENT = `## Pedido
@@ -27,8 +32,8 @@ Só a home. Nenhuma outra página muda.
 ## Evidências
 Antes e depois da home.
 
-![Antes](${PIXEL})
-![Depois](${PIXEL})
+![Antes](${BEFORE})
+![Depois](${AFTER})
 
 ## Limitações
 Não testado no Safari.

@@ -535,6 +535,13 @@ export const taskBoard = {
   "taskBoard.review.verifiedCount": "{done} of {total} verified",
   "taskBoard.review.checkFailed": "failed",
   "taskBoard.review.checkUnverified": "not verified",
+  "taskBoard.review.checkPassed": "passed",
+  "taskBoard.review.allUnverified":
+    "The agent did not report the result of these checks.",
+  "taskBoard.review.verifiedByDecoHint":
+    "Checked by the Super Agent and reviewed by the deco team",
+  "taskBoard.review.checkedByBoth":
+    "The Super Agent tested it · the deco team reviewed it",
   "taskBoard.review.disagree": "Disagree",
   "taskBoard.review.disagreeUndo": "Undo",
   "taskBoard.review.disagreePlaceholder": "What is wrong?",

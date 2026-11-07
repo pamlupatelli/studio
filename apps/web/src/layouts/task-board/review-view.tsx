@@ -15,7 +15,6 @@
 
 import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@decocms/ui/components/button.tsx";
-import { Input } from "@decocms/ui/components/input.tsx";
 import { Textarea } from "@decocms/ui/components/textarea.tsx";
 import { cn } from "@decocms/ui/lib/utils.ts";
 import { useCopy } from "@decocms/ui/hooks/use-copy.ts";
@@ -26,6 +25,7 @@ import {
   Copy01,
   Eye,
   EyeOff,
+  Flag01,
   LinkExternal01,
   XClose,
 } from "@untitledui/icons";
@@ -37,6 +37,7 @@ import {
 import { useT } from "@/i18n/use-t.ts";
 import {
   buildAdjustmentNote,
+  EMPTY_DRAFT,
   MAX_FEEDBACK_LENGTH,
   MAX_PINS,
   pinPosition,
@@ -46,6 +47,7 @@ import {
   type Disagreement,
   type EvidenceImage,
   type ReviewAudience,
+  type ReviewDraft,
   type ReviewPin,
   type ReviewSections,
 } from "./review-view-model";
@@ -70,6 +72,11 @@ export type ReviewViewProps = {
   verification?: CheckedItem[];
   /** Spells out what Approve does in this stage. */
   approveLabel?: string;
+  /** What the person had marked before, restored when the card reopens. */
+  initialDraft?: ReviewDraft;
+  /** Called with every change of the marks, and with an empty draft once the
+   *  decision is sent, so the caller can keep and clear it. */
+  onDraftChange?: (draft: ReviewDraft) => void;
   /** Both omitted: the view is read-only and shows no decision bar. Reports
    *  the checklist as the person left it. */
   onApprove?: (checks: CheckedItem[]) => void;
@@ -87,17 +94,27 @@ export function ReviewView({
   preview,
   verification,
   approveLabel,
+  initialDraft = EMPTY_DRAFT,
+  onDraftChange,
   onApprove,
   onRequestAdjustment,
 }: ReviewViewProps) {
   const t = useT();
   // What the person disagrees with, by index of the agent's check.
-  const [disagreed, setDisagreed] = useState<Record<number, string>>({});
-  const [pins, setPins] = useState<ReviewPin[]>([]);
-  const nextPin = useRef(1);
+  const [disagreed, setDisagreedState] = useState(initialDraft.disagreed);
+  const [pins, setPinsState] = useState(initialDraft.pins);
   const [showChecklist, setShowChecklist] = useState(true);
-  const [adjusting, setAdjusting] = useState(false);
-  const [note, setNote] = useState("");
+  const [note, setNoteState] = useState(initialDraft.note);
+  const [adjusting, setAdjusting] = useState(initialDraft.note.trim() !== "");
+
+  // Each change is also reported, so the caller can keep it.
+  const changeDraft = (next: Partial<ReviewDraft>) => {
+    const draft = { pins, disagreed, note, ...next };
+    setPinsState(draft.pins);
+    setDisagreedState(draft.disagreed);
+    setNoteState(draft.note);
+    onDraftChange?.(draft);
+  };
 
   const checks = sections?.howToCheck ?? [];
   const total = checks.length;
@@ -115,20 +132,20 @@ export function ReviewView({
         add: (image, position) => {
           if (pins.length >= MAX_PINS) return;
           const pin: ReviewPin = {
-            id: nextPin.current,
+            id: Math.max(0, ...pins.map((p) => p.id)) + 1,
             imageUrl: image.url,
             imageLabel: image.label,
             ...position,
             text: "",
           };
-          nextPin.current += 1;
-          setPins((prev) => [...prev, pin]);
+          changeDraft({ pins: [...pins, pin] });
         },
         edit: (id, text) =>
-          setPins((prev) =>
-            prev.map((pin) => (pin.id === id ? { ...pin, text } : pin)),
-          ),
-        remove: (id) => setPins((prev) => prev.filter((pin) => pin.id !== id)),
+          changeDraft({
+            pins: pins.map((pin) => (pin.id === id ? { ...pin, text } : pin)),
+          }),
+        remove: (id) =>
+          changeDraft({ pins: pins.filter((pin) => pin.id !== id) }),
       }
     : undefined;
   const decoDone = verification?.filter((item) => item.done).length ?? 0;
@@ -144,6 +161,7 @@ export function ReviewView({
         {verifiedByDeco && (
           <span
             data-testid="review-verified"
+            title={t("taskBoard.review.verifiedByDecoHint")}
             className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success"
           >
             <CheckCircle className="size-3.5" />
@@ -238,6 +256,11 @@ export function ReviewView({
             }
           >
             {showChecklist && showVerification && (
+              <p className="mb-2 text-xs text-muted-foreground">
+                {t("taskBoard.review.checkedByBoth")}
+              </p>
+            )}
+            {showChecklist && showVerification && (
               <ul
                 data-testid="review-deco-checklist"
                 className="flex flex-col gap-2"
@@ -262,6 +285,16 @@ export function ReviewView({
                 ))}
               </ul>
             )}
+            {showChecklist &&
+              !showVerification &&
+              checks.every((check) => check.status === "unverified") && (
+                <p
+                  data-testid="review-none-reported"
+                  className="mb-1 text-xs text-muted-foreground"
+                >
+                  {t("taskBoard.review.allUnverified")}
+                </p>
+              )}
             {showChecklist && !showVerification && (
               <ul data-testid="review-agent-checks" className="flex flex-col">
                 {attentionFirst(checks).map(({ item, index }) => (
@@ -271,13 +304,12 @@ export function ReviewView({
                     note={disagreed[index]}
                     onDisagree={
                       audience === "deco" && decisive
-                        ? (value) =>
-                            setDisagreed((prev) => {
-                              const next = { ...prev };
-                              if (value === undefined) delete next[index];
-                              else next[index] = value;
-                              return next;
-                            })
+                        ? (value) => {
+                            const next = { ...disagreed };
+                            if (value === undefined) delete next[index];
+                            else next[index] = value;
+                            changeDraft({ disagreed: next });
+                          }
                         : undefined
                     }
                   />
@@ -331,7 +363,9 @@ export function ReviewView({
                 placeholder={t("taskBoard.review.adjustmentPlaceholder")}
                 maxLength={MAX_FEEDBACK_LENGTH * 4}
                 value={note}
-                onChange={(event) => setNote(event.target.value)}
+                onChange={(event) =>
+                  changeDraft({ note: event.target.value })
+                }
               />
               {feedbackCount > 0 && (
                 <p className="text-xs text-muted-foreground">
@@ -358,9 +392,7 @@ export function ReviewView({
                         },
                       ),
                     );
-                    setNote("");
-                    setPins([]);
-                    setDisagreed({});
+                    changeDraft(EMPTY_DRAFT);
                     setAdjusting(false);
                   }}
                 >
@@ -375,7 +407,7 @@ export function ReviewView({
             <div className="flex gap-2">
               <Button
                 variant={feedbackCount > 0 ? "outline" : "default"}
-                onClick={() =>
+                onClick={() => {
                   onApprove(
                     checks.map((check, index) => ({
                       text: check.text,
@@ -383,8 +415,9 @@ export function ReviewView({
                         check.status === "passed" &&
                         disagreed[index] === undefined,
                     })),
-                  )
-                }
+                  );
+                  changeDraft(EMPTY_DRAFT);
+                }}
               >
                 {approveLabel ?? t("taskBoard.review.approve")}
               </Button>
@@ -459,8 +492,9 @@ function attentionFirst(
     .sort((a, b) => rank[a.item.status] - rank[b.item.status]);
 }
 
-/** One check the agent reported. The deco team can disagree with it, which
- *  opens a short note; that is the exception, not a step. */
+/** One check the agent reported. Only a failure is loud: a pass is a quiet
+ *  tick and an unreported check a neutral dot. The deco team can disagree with
+ *  one, which opens a note; that is the exception, not a step. */
 function AgentCheck({
   item,
   note,
@@ -472,21 +506,33 @@ function AgentCheck({
   onDisagree?: (note: string | undefined) => void;
 }) {
   const t = useT();
+  const statusLabel = {
+    passed: t("taskBoard.review.checkPassed"),
+    failed: t("taskBoard.review.checkFailed"),
+    unverified: t("taskBoard.review.checkUnverified"),
+  }[item.status];
+  const disagreeLabel =
+    note === undefined
+      ? t("taskBoard.review.disagree")
+      : t("taskBoard.review.disagreeUndo");
   return (
     <li
       data-status={item.status}
-      className="flex flex-col gap-2 border-b border-border py-2 text-sm first:pt-0 last:border-b-0 last:pb-0"
+      className="flex flex-col gap-2 border-b border-border py-3 text-sm first:pt-1 last:border-b-0 last:pb-1"
     >
-      <div className="flex items-start gap-2">
-        {item.status === "passed" && (
-          <CheckCircle className="mt-0.5 size-4 shrink-0 text-success" />
-        )}
-        {item.status === "failed" && (
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
-        )}
-        {item.status === "unverified" && (
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-        )}
+      <div className="flex items-start gap-2.5">
+        <span title={statusLabel} className="mt-0.5 shrink-0">
+          {item.status === "passed" && (
+            <CheckCircle className="size-4 text-success" />
+          )}
+          {item.status === "failed" && (
+            <AlertTriangle className="size-4 text-destructive" />
+          )}
+          {item.status === "unverified" && (
+            <span className="block size-4 rounded-full border border-dashed border-muted-foreground/60" />
+          )}
+          <span className="sr-only">{statusLabel}</span>
+        </span>
         <span
           className={cn(
             "min-w-0 flex-1",
@@ -494,33 +540,34 @@ function AgentCheck({
           )}
         >
           {item.text}
-          {item.status !== "passed" && (
+          {item.status === "failed" && (
             <span className="ml-1.5 text-xs text-muted-foreground">
-              {item.status === "failed"
-                ? t("taskBoard.review.checkFailed")
-                : t("taskBoard.review.checkUnverified")}
+              {statusLabel}
             </span>
           )}
         </span>
         {onDisagree && (
           <Button
             variant="ghost"
-            size="xs"
-            className="shrink-0 text-muted-foreground"
+            size="icon-xs"
+            className={cn(
+              "shrink-0 text-muted-foreground",
+              note !== undefined && "text-destructive",
+            )}
             aria-pressed={note !== undefined}
+            aria-label={disagreeLabel}
+            title={disagreeLabel}
             onClick={() => onDisagree(note === undefined ? "" : undefined)}
           >
-            {note === undefined
-              ? t("taskBoard.review.disagree")
-              : t("taskBoard.review.disagreeUndo")}
+            <Flag01 size={14} />
           </Button>
         )}
       </div>
       {note !== undefined && (
-        <Input
+        <Textarea
           autoFocus
-          size="sm"
-          className="ml-6 w-auto"
+          rows={1}
+          className="ml-[1.625rem] max-h-40 min-h-0 w-auto resize-none py-1.5"
           aria-label={t("taskBoard.review.disagreePlaceholder")}
           placeholder={t("taskBoard.review.disagreePlaceholder")}
           maxLength={MAX_FEEDBACK_LENGTH}
@@ -728,12 +775,13 @@ function EvidenceFigure({
       </figcaption>
       {pinning &&
         own.map(({ pin, number }) => (
-          <div key={pin.id} className="flex items-center gap-2">
-            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+          <div key={pin.id} className="flex items-start gap-2">
+            <span className="mt-1.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
               {number}
             </span>
-            <Input
-              size="sm"
+            <Textarea
+              rows={1}
+              className="max-h-40 min-h-0 resize-none py-1.5"
               aria-label={t("taskBoard.review.pinLabel", {
                 n: String(number),
               })}

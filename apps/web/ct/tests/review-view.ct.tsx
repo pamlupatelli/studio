@@ -4,9 +4,7 @@ import { ReviewViewHarness } from "../harness/review-view-harness";
 // A free-form comment: the agent skipped the contract.
 const FREE_COMMENT = "Pronto, abri o PR com o banner novo.";
 
-test("QA: shows the sections and what the agent checked", async ({
-  mount,
-}) => {
+test("QA: shows the sections and what the agent checked", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
 
   await expect(component.getByText("What changed")).toBeVisible();

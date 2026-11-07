@@ -3,8 +3,12 @@ import {
   adjustmentState,
   buildAdjustmentNote,
   decoVerification,
+  EMPTY_DRAFT,
   formatAdjustment,
   formatVerification,
+  MAX_FEEDBACK_LENGTH,
+  MAX_PINS,
+  parseDraft,
   parseReviewSections,
   pickReviewComment,
   pinPosition,
@@ -498,5 +502,64 @@ describe("pinPosition", () => {
     expect(
       pinPosition({ x: 5, y: 5 }, { left: 0, top: 0, width: 0, height: 0 }),
     ).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe("parseDraft", () => {
+  it("returns an empty draft for anything that is not a draft", () => {
+    expect(parseDraft(null)).toEqual(EMPTY_DRAFT);
+    expect(parseDraft("x")).toEqual(EMPTY_DRAFT);
+    expect(parseDraft([1])).toEqual(EMPTY_DRAFT);
+  });
+
+  it("keeps a valid draft", () => {
+    const draft = {
+      pins: [
+        {
+          id: 2,
+          imageUrl: "u",
+          imageLabel: "Depois",
+          x: 10,
+          y: 20,
+          text: "a",
+        },
+      ],
+      disagreed: { 1: "errado" },
+      note: "oi",
+    };
+    expect(parseDraft(draft)).toEqual(draft);
+  });
+
+  it("drops malformed, duplicate and out-of-range entries", () => {
+    const parsed = parseDraft({
+      pins: [
+        { id: 1, imageUrl: "u", x: 150, y: -5, text: "a" },
+        { id: 1, imageUrl: "u", x: 1, y: 1, text: "dup" },
+        { id: "2", imageUrl: "u", x: 1, y: 1 },
+        { id: 3, imageUrl: 4, x: 1, y: 1 },
+        { id: 4, imageUrl: "u", x: Number.NaN, y: 1 },
+        "nope",
+      ],
+      disagreed: { "-1": "a", x: "b", 2: 5, 3: "ok" },
+      note: 7,
+    });
+    expect(parsed.pins).toEqual([
+      { id: 1, imageUrl: "u", imageLabel: "", x: 100, y: 0, text: "a" },
+    ]);
+    expect(parsed.disagreed).toEqual({ 3: "ok" });
+    expect(parsed.note).toBe("");
+  });
+
+  it("caps pins and text length", () => {
+    const pins = Array.from({ length: MAX_PINS + 5 }, (_, id) => ({
+      id,
+      imageUrl: "u",
+      x: 1,
+      y: 1,
+      text: "z".repeat(MAX_FEEDBACK_LENGTH + 50),
+    }));
+    const parsed = parseDraft({ pins });
+    expect(parsed.pins).toHaveLength(MAX_PINS);
+    expect(parsed.pins[0]?.text).toHaveLength(MAX_FEEDBACK_LENGTH);
   });
 });

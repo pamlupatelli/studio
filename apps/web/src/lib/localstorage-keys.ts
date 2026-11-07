@@ -29,6 +29,10 @@ export const LOCALSTORAGE_KEYS = {
   /** Which view of a task's conversation the person chose: review, full or
    *  automatic (by lane). One setting for every task. */
   taskConversationView: () => `studio:task-conversation-view`,
+  /** What a person marked in a card's review (pins, disagreements, note)
+   *  before deciding. One entry per card, delivery and round. */
+  taskReviewDraft: (taskId: string, round: number, delivery: number) =>
+    `studio:task-review-draft:${taskId}:${round}:${delivery}`,
   /** The assignee filter the org's task board opens on for this user. */
   taskBoardAssignee: (orgId: string, userId: string) =>
     `studio:task-board-assignee:${orgId}:${userId}`,

@@ -35,8 +35,10 @@ import {
   decoVerification,
   formatAdjustment,
   formatVerification,
+  parseDraft,
   pickReviewComment,
   type CheckedItem,
+  type ReviewDraft,
 } from "./review-view-model";
 
 type ViewChoice = "auto" | "review" | "full";
@@ -93,6 +95,23 @@ export function ConversationViews({
   const picked = pickReviewComment(all, SUPER_AGENT_ASSIGNEE_ID);
   const { round, returned } = adjustmentState(all, SUPER_AGENT_ASSIGNEE_ID);
   const verification = decoVerification(all, SUPER_AGENT_ASSIGNEE_ID);
+  // A new delivery or a new round starts the marks over.
+  const [storedDraft, setStoredDraft] = useLocalStorage<unknown>(
+    LOCALSTORAGE_KEYS.taskReviewDraft(
+      item?.id ?? "new",
+      round,
+      picked?.body.length ?? 0,
+    ),
+    null,
+  );
+  const saveDraft = (draft: ReviewDraft) =>
+    setStoredDraft(
+      draft.pins.length === 0 &&
+        draft.note === "" &&
+        Object.keys(draft.disagreed).length === 0
+        ? null
+        : draft,
+    );
   // Without an agent comment there is nothing to review: the full
   // conversation is the only view, so no switch is offered.
   if (!item || !picked) {
@@ -239,8 +258,9 @@ export function ConversationViews({
             </p>
           )}
           <ReviewView
-            // A new delivery or a new round starts the marks over.
             key={`${item.id}-${round}-${picked.body.length}`}
+            initialDraft={parseDraft(storedDraft)}
+            onDraftChange={saveDraft}
             id={item.id}
             sections={picked.sections}
             fallback={

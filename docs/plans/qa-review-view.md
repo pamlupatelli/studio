@@ -13,7 +13,9 @@ adds no new storage.
   Approval the client sees the result, a "Checked by deco" mark and what was
   checked, and one question.
 - **What the agent checked.** Each item shows passed, failed or not verified.
-  Failed and unverified come first. The approver does not tick anything: the
+  Only a failure is loud; a pass is a quiet tick and an unreported check a
+  neutral dot. When the agent reported none, one line says so. Failed and
+  unverified come first. The approver does not tick anything: the
   common case is one click on Approve. A per-item "Disagree" with a short note is
   the exception, and turns the decision into a request for adjustment.
 - **Pins on screenshots.** Both the deco team and the client can click an
@@ -83,8 +85,11 @@ Not built here because they belong to the platform:
 6. **Telling people it is their turn.** There is no notification when a card
    enters QA or Customer Approval, and the board marks only unowned In Review
    cards.
-7. **Persisted marks.** Pins and disagreements are kept only when the person
-   sends the decision. Progress before that is local to the open card.
+7. **Shared drafts.** Pins, disagreements and the note are kept as a draft in
+   the person's browser, per card, delivery and round, and cleared when the
+   decision is sent. They do not follow the person to another device, and the
+   rest of the team cannot see them. Keeping them on the card would need new
+   storage.
 9. **Choosing the status on adjustment.** Not built: adjustments always return to
    In Review.
 8. **Refuse versus adjust.** Both send the card back with a note. A separate

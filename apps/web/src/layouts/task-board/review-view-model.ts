@@ -72,8 +72,9 @@ const CHECK_STATUS: Record<string, CheckStatus> = {
 function checklistOf(body: string): ChecklistItem[] {
   const items: ChecklistItem[] = [];
   for (const line of body.split("\n")) {
-    const match =
-      /^\s*(?:[-*+]|\d+[.)])\s+(?:\[([ xX!])\]\s+)?(.+)$/.exec(line);
+    const match = /^\s*(?:[-*+]|\d+[.)])\s+(?:\[([ xX!])\]\s+)?(.+)$/.exec(
+      line,
+    );
     if (!match?.[2]) continue;
     items.push({
       text: match[2].trim(),
@@ -329,6 +330,70 @@ export type Disagreement = { text: string; note: string };
 
 export const MAX_PINS = 20;
 export const MAX_FEEDBACK_LENGTH = 500;
+
+/** What a person has marked so far, kept so leaving the card does not lose it. */
+export type ReviewDraft = {
+  pins: ReviewPin[];
+  /** Notes by index of the agent's check. */
+  disagreed: Record<number, string>;
+  /** The free note of the adjustment request. */
+  note: string;
+};
+
+export const EMPTY_DRAFT: ReviewDraft = { pins: [], disagreed: {}, note: "" };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const clip = (value: unknown, max: number): string =>
+  typeof value === "string" ? value.slice(0, max) : "";
+
+const percent = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value)
+    ? Math.min(100, Math.max(0, value))
+    : null;
+
+/** Reads a stored draft. Anything unexpected is dropped, never trusted. */
+export function parseDraft(raw: unknown): ReviewDraft {
+  if (!isRecord(raw)) return EMPTY_DRAFT;
+
+  const pins: ReviewPin[] = [];
+  const seen = new Set<number>();
+  for (const entry of Array.isArray(raw.pins) ? raw.pins : []) {
+    if (pins.length >= MAX_PINS || !isRecord(entry)) continue;
+    const { id } = entry;
+    const x = percent(entry.x);
+    const y = percent(entry.y);
+    if (typeof id !== "number" || !Number.isInteger(id) || seen.has(id)) {
+      continue;
+    }
+    if (x === null || y === null || typeof entry.imageUrl !== "string") {
+      continue;
+    }
+    seen.add(id);
+    pins.push({
+      id,
+      imageUrl: entry.imageUrl,
+      imageLabel: clip(entry.imageLabel, MAX_FEEDBACK_LENGTH),
+      x,
+      y,
+      text: clip(entry.text, MAX_FEEDBACK_LENGTH),
+    });
+  }
+
+  const disagreed: Record<number, string> = {};
+  if (isRecord(raw.disagreed)) {
+    for (const [key, value] of Object.entries(raw.disagreed)) {
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0 || typeof value !== "string") {
+        continue;
+      }
+      disagreed[index] = value.slice(0, MAX_FEEDBACK_LENGTH);
+    }
+  }
+
+  return { pins, disagreed, note: clip(raw.note, MAX_FEEDBACK_LENGTH * 4) };
+}
 
 /** Where a click landed on an image, as percentages of its size. */
 export function pinPosition(
