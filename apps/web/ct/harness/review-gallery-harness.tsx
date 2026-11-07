@@ -14,8 +14,6 @@ const swatch = (label: string, color: string) =>
 type Scenario = {
   comment: string;
   audience: ReviewAudience;
-  stage: string;
-  stageHint?: string;
   verifiedByDeco?: boolean;
   round?: number;
   agentChecks?: number;
@@ -26,9 +24,6 @@ type Scenario = {
 const SCENARIOS: Record<string, Scenario> = {
   "visual-before-after": {
     audience: "deco",
-    stage: "Stage: QA",
-    stageHint:
-      "The deco team checks the work. Approving sends it to the client.",
     agentChecks: 6,
     decide: true,
     comment: `## Pedido
@@ -41,8 +36,8 @@ O carrossel da home agora tem uma seta para a direita, no mesmo estilo das outra
 Só o carrossel da home. Outras páginas não mudam.
 
 ## Como conferir
-- Abrir a home e ver a seta no carrossel
-- Clicar na seta e ver o carrossel andar
+- [x] Abrir a home e ver a seta no carrossel
+- [x] Clicar na seta e ver o carrossel andar
 - Ver no celular
 
 ## Evidências
@@ -56,9 +51,6 @@ Não testado no Safari.`,
   },
   "visual-preview": {
     audience: "deco",
-    stage: "Stage: QA",
-    stageHint:
-      "The deco team checks the work. Approving sends it to the client.",
     agentChecks: 4,
     preview: true,
     decide: true,
@@ -69,18 +61,15 @@ Trocar a ordem das seções da página de coleção.
 Na página de coleção, a faixa de filtros agora vem antes da lista de produtos.
 
 ## Como conferir
-- Abrir a página de coleção pelo preview
-- Ver que os filtros aparecem acima dos produtos
-- Aplicar um filtro e ver a lista mudar
+- [x] Abrir a página de coleção pelo preview
+- [x] Ver que os filtros aparecem acima dos produtos
+- [!] Aplicar um filtro e ver a lista mudar
 
 ## Evidências
 Abra o preview na página afetada para conferir ao vivo.`,
   },
   technical: {
     audience: "deco",
-    stage: "Stage: QA",
-    stageHint:
-      "The deco team checks the work. Approving sends it to the client.",
     agentChecks: 9,
     decide: true,
     comment: `## Pedido
@@ -93,9 +82,9 @@ O evento de compra agora é enviado uma única vez por pedido. Antes, um segundo
 Os relatórios de compra deixam de contar pedidos em dobro. Nada muda para quem compra.
 
 ## Como conferir
-- Fazer uma compra de teste e confirmar um único evento
-- Recarregar a página de confirmação e confirmar que não há novo evento
-- Conferir o total de pedidos no relatório
+- [x] Fazer uma compra de teste e confirmar um único evento
+- [x] Recarregar a página de confirmação e confirmar que não há novo evento
+- [x] Conferir o total de pedidos no relatório
 
 ## Evidências
 | Verificação | Antes | Depois |
@@ -109,8 +98,6 @@ Pedidos antigos continuam contados em dobro no histórico.`,
   },
   "customer-round-2": {
     audience: "customer",
-    stage: "Stage: Customer Approval",
-    stageHint: "The client decides. Approving releases it for deployment.",
     verifiedByDeco: true,
     round: 2,
     agentChecks: 7,
@@ -132,8 +119,6 @@ O botão de compra agora diz "Comprar agora", como combinado na rodada anterior.
   },
   "in-review-read-only": {
     audience: "deco",
-    stage: "Stage: In Review",
-    stageHint: "Agents are still reviewing. Nothing to decide yet.",
     agentChecks: 3,
     comment: `## O que mudou
 Troca do ícone do carrinho pelo ícone novo.
@@ -143,9 +128,6 @@ Troca do ícone do carrinho pelo ícone novo.
   },
   fallback: {
     audience: "deco",
-    stage: "Stage: QA",
-    stageHint:
-      "The deco team checks the work. Approving sends it to the client.",
     decide: true,
     comment: "Pronto, abri o PR com a mudança. Os testes passaram.",
   },
@@ -164,8 +146,6 @@ export function ReviewGalleryHarness({ scenario }: { scenario: string }) {
         sections={parseReviewSections(config.comment)}
         fallback={<p>{config.comment}</p>}
         audience={config.audience}
-        stage={config.stage}
-        stageHint={config.stageHint}
         verifiedByDeco={config.verifiedByDeco}
         round={config.round}
         agentChecks={config.agentChecks}

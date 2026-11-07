@@ -20,8 +20,8 @@ O banner da home agora mostra a campanha de outubro, com o novo botão.
 Só a home. Nenhuma outra página muda.
 
 ## Como conferir
-- Abrir a home e ver o novo banner
-- Clicar no botão e chegar na coleção
+- [x] Abrir a home e ver o novo banner
+- [!] Clicar no botão e chegar na coleção
 - Ver a home no celular
 
 ## Evidências
@@ -66,8 +66,6 @@ export function ReviewViewHarness({
         verifiedByDeco={verifiedByDeco}
         round={round}
         agentChecks={5}
-        stage="Stage: QA"
-        stageHint="The deco team checks the work."
         verification={verification}
         onApprove={(reported) => {
           setApproved((n) => n + 1);

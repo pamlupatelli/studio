@@ -1,11 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import {
   adjustmentState,
+  buildAdjustmentNote,
   decoVerification,
   formatAdjustment,
   formatVerification,
   parseReviewSections,
   pickReviewComment,
+  pinPosition,
   splitEvidence,
 } from "./review-view-model";
 
@@ -39,9 +41,12 @@ describe("parseReviewSections", () => {
     );
     expect(parsed?.impact).toContain("Só a home");
     expect(parsed?.howToCheck).toEqual([
-      "Abrir a home e ver o novo banner",
-      "Conferir que o botão leva para a coleção",
-      "Ver no celular",
+      { text: "Abrir a home e ver o novo banner", status: "unverified" },
+      {
+        text: "Conferir que o botão leva para a coleção",
+        status: "unverified",
+      },
+      { text: "Ver no celular", status: "unverified" },
     ]);
     expect(parsed?.limitations).toBe("Não testado no Safari.");
   });
@@ -51,7 +56,9 @@ describe("parseReviewSections", () => {
       "### **What changed:**\nNew banner.\n\n## How to check\n- Open home",
     );
     expect(parsed?.changed).toBe("New banner.");
-    expect(parsed?.howToCheck).toEqual(["Open home"]);
+    expect(parsed?.howToCheck).toEqual([
+      { text: "Open home", status: "unverified" },
+    ]);
   });
 
   it("accepts headings without accents", () => {
@@ -174,7 +181,10 @@ describe("splitEvidence", () => {
   });
 
   it("returns plain text untouched", () => {
-    expect(splitEvidence("só texto")).toEqual({ images: [], text: "só texto" });
+    expect(splitEvidence("só texto")).toEqual({
+      images: [],
+      text: "só texto",
+    });
   });
 });
 
@@ -373,5 +383,120 @@ describe("deco verification", () => {
         AGENT,
       ),
     ).toBeNull();
+  });
+});
+
+describe("what the agent reports per check", () => {
+  const comment = (checks: string) =>
+    `## O que mudou\nX\n\n## Como conferir\n${checks}`;
+
+  it("reads passed, failed and unverified from the task-list marker", () => {
+    const parsed = parseReviewSections(
+      comment(
+        "- [x] Home abre\n- [X] Botão leva à coleção\n- [!] Celular\n- [ ] Safari\n- Tablet",
+      ),
+    );
+    expect(parsed?.howToCheck.map((c) => c.status)).toEqual([
+      "passed",
+      "passed",
+      "failed",
+      "unverified",
+      "unverified",
+    ]);
+    expect(parsed?.howToCheck[2]?.text).toBe("Celular");
+  });
+
+  it("accepts the heading in its new name", () => {
+    const parsed = parseReviewSections(
+      "## What changed\nX\n\n## What the agent checked\n- [x] Home",
+    );
+    expect(parsed?.howToCheck).toEqual([{ text: "Home", status: "passed" }]);
+  });
+
+  it("is not a contract without any check", () => {
+    expect(parseReviewSections(comment("Nada a listar"))).toBeNull();
+  });
+});
+
+describe("buildAdjustmentNote", () => {
+  const labels = { pins: "Pins", disagreements: "Checks I disagree with" };
+
+  it("is only the note when nothing was marked", () => {
+    expect(
+      buildAdjustmentNote(
+        { note: "  Ajustar o título  ", pins: [], disagreements: [] },
+        labels,
+      ),
+    ).toBe("Ajustar o título");
+  });
+
+  it("numbers pins in order and lists the disagreements", () => {
+    const note = buildAdjustmentNote(
+      {
+        note: "",
+        pins: [
+          {
+            id: 7,
+            imageUrl: "u1",
+            imageLabel: "Depois",
+            x: 62.5,
+            y: 18,
+            text: "Mais à esquerda",
+          },
+          {
+            id: 9,
+            imageUrl: "u2",
+            imageLabel: "Depois",
+            x: 10,
+            y: 90,
+            text: "",
+          },
+        ],
+        disagreements: [{ text: "Celular", note: "Quebra no iPhone SE" }],
+      },
+      labels,
+    );
+    expect(note).toBe(
+      [
+        "**Pins**",
+        "1. Depois (x 62.5%, y 18%): Mais à esquerda",
+        "2. Depois (x 10%, y 90%)",
+        "",
+        "**Checks I disagree with**",
+        "- Celular: Quebra no iPhone SE",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps the note first", () => {
+    const note = buildAdjustmentNote(
+      {
+        note: "Quase lá",
+        pins: [
+          { id: 1, imageUrl: "u", imageLabel: "Antes", x: 1, y: 2, text: "x" },
+        ],
+        disagreements: [],
+      },
+      labels,
+    );
+    expect(note.startsWith("Quase lá\n\n**Pins**")).toBe(true);
+  });
+});
+
+describe("pinPosition", () => {
+  const box = { left: 100, top: 50, width: 200, height: 100 };
+
+  it("is a percentage of the image from its top-left corner", () => {
+    expect(pinPosition({ x: 200, y: 100 }, box)).toEqual({ x: 50, y: 50 });
+  });
+
+  it("stays inside the image", () => {
+    expect(pinPosition({ x: 0, y: 999 }, box)).toEqual({ x: 0, y: 100 });
+  });
+
+  it("ignores an image with no size", () => {
+    expect(
+      pinPosition({ x: 5, y: 5 }, { left: 0, top: 0, width: 0, height: 0 }),
+    ).toEqual({ x: 0, y: 0 });
   });
 });

@@ -8,9 +8,18 @@ adds no new storage.
 
 ## What it does
 
-- **Whose turn.** A banner names the lane and what a decision does. In QA the
-  deco team ticks a checklist; in Customer Approval the client sees the result,
-  a "Checked by deco" mark and what the deco team checked, and one question.
+- **Whose turn.** The lane is already on the card header, so the view adds no
+  stage text. In QA the deco team reads what the agent checked; in Customer
+  Approval the client sees the result, a "Checked by deco" mark and what was
+  checked, and one question.
+- **What the agent checked.** Each item shows passed, failed or not verified.
+  Failed and unverified come first. The approver does not tick anything: the
+  common case is one click on Approve. A per-item "Disagree" with a short note is
+  the exception, and turns the decision into a request for adjustment.
+- **Pins on screenshots.** Both the deco team and the client can click an
+  evidence image to mark a spot and write what must change. Pins are numbered,
+  stored as percentages of the image, and travel in the adjustment note
+  (`**Pins**` list) so the agent receives them. Live preview is not pinnable yet.
 - **What changed.** The latest comment the agent left for people, split into
   sections. Before/after images sit side by side. When the comment does not
   follow the format, the view shows it as written and says so.
@@ -37,7 +46,7 @@ them the view falls back to the raw comment.
 | Pedido / Request | no | What was asked, in plain words |
 | **O que mudou / What changed** | yes | What is different now, no jargon |
 | Impacto / Impact | no | Where it shows, what does not change |
-| **Como conferir / How to check** | yes | A bullet list of things a person can check |
+| **Como conferir / How to check** (also "O que o agente verificou / What the agent checked") | yes | A task list of what the agent checked: `- [x]` passed, `- [!]` failed, `- [ ]` or plain bullet not verified |
 | Evidências / Evidence | no | Prose and images; before/after images are labelled by their alt text |
 | Limitações / Limitations | no | What was not tested |
 
@@ -47,7 +56,8 @@ Two fixed first lines are read back by the view (either language):
 
 - `**Ajuste pedido** · QA|Cliente · rodada N` followed by the note.
 - `**Conferido pela deco**` followed by `- [x]` / `- [ ]` items, written when the
-  deco team approves in QA, so the client can see what was checked.
+  deco team approves in QA, so the client can see what was checked. An item is
+  done only if the agent passed it and the approver did not disagree.
 
 ## Gaps and recommendations
 
@@ -73,7 +83,9 @@ Not built here because they belong to the platform:
 6. **Telling people it is their turn.** There is no notification when a card
    enters QA or Customer Approval, and the board marks only unowned In Review
    cards.
-7. **Persisted checks.** What the deco team ticks is kept only when they approve.
-   Progress before that is local to the open card.
+7. **Persisted marks.** Pins and disagreements are kept only when the person
+   sends the decision. Progress before that is local to the open card.
+9. **Choosing the status on adjustment.** Not built: adjustments always return to
+   In Review.
 8. **Refuse versus adjust.** Both send the card back with a note. A separate
    "refuse" would only be worth it if it meant something different downstream.

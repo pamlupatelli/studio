@@ -4,17 +4,25 @@ import { ReviewViewHarness } from "../harness/review-view-harness";
 // A free-form comment: the agent skipped the contract.
 const FREE_COMMENT = "Pronto, abri o PR com o banner novo.";
 
-test("QA: shows the sections and an itemized checklist", async ({ mount }) => {
+test("QA: shows the sections and what the agent checked", async ({
+  mount,
+}) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
 
   await expect(component.getByText("What changed")).toBeVisible();
-  await expect(
-    component.getByText("Abrir a home e ver o novo banner"),
-  ).toBeVisible();
-  await expect(component.getByText("0 of 3 checked")).toBeVisible();
+  await expect(component.getByText("What the agent checked")).toBeVisible();
+  await expect(component.getByText("1 of 3 verified")).toBeVisible();
+  // Nothing to tick: the person only confirms.
+  await expect(component.getByRole("checkbox")).toHaveCount(0);
+});
 
-  await component.getByRole("checkbox").first().click();
-  await expect(component.getByText("1 of 3 checked")).toBeVisible();
+test("QA: failed and unverified checks come first", async ({ mount }) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  const statuses = await component
+    .getByTestId("review-agent-checks")
+    .locator("li")
+    .evaluateAll((items) => items.map((li) => li.getAttribute("data-status")));
+  expect(statuses).toEqual(["failed", "unverified", "passed"]);
 });
 
 test("QA: approve reports the decision", async ({ mount }) => {
@@ -79,13 +87,6 @@ test("falls back to the raw comment when the contract is missing", async ({
   ).toBeVisible();
 });
 
-test("shows the stage and what it means", async ({ mount }) => {
-  const component = await mount(<ReviewViewHarness audience="deco" />);
-  await expect(component.getByTestId("review-stage")).toContainText(
-    "Stage: QA",
-  );
-});
-
 test("lays out labelled before and after images side by side", async ({
   mount,
 }) => {
@@ -97,15 +98,78 @@ test("lays out labelled before and after images side by side", async ({
   await expect(pair.getByText("After")).toBeVisible();
 });
 
-test("QA: approving reports what was ticked", async ({ mount }) => {
+test("QA: approving records only what the agent passed", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
-  await component.getByRole("checkbox").first().click();
   await component.getByRole("button", { name: "Approve" }).click();
 
   const reported = JSON.parse(
     (await component.getByTestId("checks").textContent()) ?? "[]",
   ) as { text: string; done: boolean }[];
   expect(reported.map((item) => item.done)).toEqual([true, false, false]);
+});
+
+test("QA: disagreeing with a check becomes an adjustment", async ({
+  mount,
+}) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  await component.getByRole("button", { name: "Disagree" }).first().click();
+  await component
+    .getByRole("textbox", { name: "What is wrong?" })
+    .fill("O botão leva para a home");
+
+  await component
+    .getByRole("button", { name: "Request adjustment (1)" })
+    .click();
+  await component
+    .getByRole("button", { name: "Send back to In Review" })
+    .click();
+
+  const sent = JSON.parse(
+    (await component.getByTestId("adjustments").textContent()) ?? "[]",
+  ) as string[];
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toContain("Checks I disagree with");
+  expect(sent[0]).toContain("O botão leva para a home");
+});
+
+test("pins: a click marks the image and travels with the adjustment", async ({
+  mount,
+}) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  const after = component.getByRole("button", {
+    name: "Mark a spot on Depois",
+  });
+  await after.click({ position: { x: 1, y: 1 } });
+
+  await expect(component.getByTestId("review-pin")).toHaveCount(1);
+  await component
+    .getByRole("textbox", { name: "Pin 1" })
+    .fill("Alinhar com o título");
+
+  await component
+    .getByRole("button", { name: "Request adjustment (1)" })
+    .click();
+  await component
+    .getByRole("button", { name: "Send back to In Review" })
+    .click();
+
+  const sent = JSON.parse(
+    (await component.getByTestId("adjustments").textContent()) ?? "[]",
+  ) as string[];
+  expect(sent[0]).toContain("**Pins**");
+  expect(sent[0]).toMatch(
+    /1\. Depois \(x [\d.]+%, y [\d.]+%\): Alinhar com o título/,
+  );
+});
+
+test("pins: removing one clears its mark", async ({ mount }) => {
+  const component = await mount(<ReviewViewHarness audience="deco" />);
+  await component
+    .getByRole("button", { name: "Mark a spot on Antes" })
+    .click({ position: { x: 1, y: 1 } });
+  await expect(component.getByTestId("review-pin")).toHaveCount(1);
+  await component.getByRole("button", { name: "Remove pin 1" }).click();
+  await expect(component.getByTestId("review-pin")).toHaveCount(0);
 });
 
 test("customer: sees what the deco team checked", async ({ mount }) => {

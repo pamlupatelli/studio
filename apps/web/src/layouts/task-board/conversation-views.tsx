@@ -163,13 +163,6 @@ export function ConversationViews({
     );
   };
 
-  const stageHint =
-    status === LANES.qa
-      ? t("taskBoard.review.stageHintQa")
-      : status === LANES.customer
-        ? t("taskBoard.review.stageHintCustomer")
-        : undefined;
-
   return (
     <div className="flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2 pt-4">
@@ -246,6 +239,8 @@ export function ConversationViews({
             </p>
           )}
           <ReviewView
+            // A new delivery or a new round starts the marks over.
+            key={`${item.id}-${round}-${picked.body.length}`}
             id={item.id}
             sections={picked.sections}
             fallback={
@@ -258,12 +253,6 @@ export function ConversationViews({
             verifiedByDeco={status === LANES.customer}
             round={round}
             verification={verification ?? undefined}
-            stage={
-              nextLane
-                ? t("taskBoard.review.stage", { lane: lane(status) })
-                : undefined
-            }
-            stageHint={stageHint}
             approveLabel={
               status === LANES.qa
                 ? t("taskBoard.review.approveQa")

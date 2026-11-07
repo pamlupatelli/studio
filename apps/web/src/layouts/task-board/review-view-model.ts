@@ -15,12 +15,19 @@ export type ReviewSectionKey =
   | "evidence"
   | "limitations";
 
+/** What the agent reports for one check: `[x]` ran and passed, `[!]` ran and
+ *  failed, anything else (`[ ]` or a plain bullet) was not verified. */
+export type CheckStatus = "passed" | "failed" | "unverified";
+
+export type ChecklistItem = { text: string; status: CheckStatus };
+
 export type ReviewSections = {
   request?: string;
   changed: string;
   impact?: string;
-  /** One item per bullet of the "how to check" section. */
-  howToCheck: string[];
+  /** One item per bullet of the "how to check" section, with what the agent
+   *  found. */
+  howToCheck: ChecklistItem[];
   evidence?: string;
   limitations?: string;
 };
@@ -30,7 +37,12 @@ const SECTION_ALIASES: Record<ReviewSectionKey, string[]> = {
   request: ["pedido", "request"],
   changed: ["o que mudou", "what changed"],
   impact: ["impacto", "impact"],
-  howToCheck: ["como conferir", "how to check"],
+  howToCheck: [
+    "como conferir",
+    "how to check",
+    "o que o agente verificou",
+    "what the agent checked",
+  ],
   evidence: ["evidencias", "evidence"],
   limitations: ["limitacoes", "limitations"],
 };
@@ -52,11 +64,21 @@ function sectionKeyFor(heading: string): ReviewSectionKey | null {
   return null;
 }
 
-function bulletsOf(body: string): string[] {
-  const items: string[] = [];
+const CHECK_STATUS: Record<string, CheckStatus> = {
+  x: "passed",
+  "!": "failed",
+};
+
+function checklistOf(body: string): ChecklistItem[] {
+  const items: ChecklistItem[] = [];
   for (const line of body.split("\n")) {
-    const match = /^\s*(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?(.+)$/.exec(line);
-    if (match?.[1]) items.push(match[1].trim());
+    const match =
+      /^\s*(?:[-*+]|\d+[.)])\s+(?:\[([ xX!])\]\s+)?(.+)$/.exec(line);
+    if (!match?.[2]) continue;
+    items.push({
+      text: match[2].trim(),
+      status: CHECK_STATUS[(match[1] ?? "").toLowerCase()] ?? "unverified",
+    });
   }
   return items;
 }
@@ -86,7 +108,7 @@ export function parseReviewSections(markdown: string): ReviewSections | null {
   };
 
   const changed = text("changed");
-  const howToCheck = bulletsOf(text("howToCheck") ?? "");
+  const howToCheck = checklistOf(text("howToCheck") ?? "");
   if (!changed || howToCheck.length === 0) return null;
 
   return {
@@ -288,6 +310,75 @@ export function adjustmentState(
 }
 
 export type CheckedItem = { text: string; done: boolean };
+
+/** A mark on an evidence image, placed by clicking it. */
+export type ReviewPin = {
+  id: number;
+  /** The image the pin is on, to place it back on that image. */
+  imageUrl: string;
+  /** What the image is called in the view, so the agent can tell which. */
+  imageLabel: string;
+  /** Position from the image's top-left corner, in percent. */
+  x: number;
+  y: number;
+  text: string;
+};
+
+/** A check the agent reported that the person does not agree with. */
+export type Disagreement = { text: string; note: string };
+
+export const MAX_PINS = 20;
+export const MAX_FEEDBACK_LENGTH = 500;
+
+/** Where a click landed on an image, as percentages of its size. */
+export function pinPosition(
+  click: { x: number; y: number },
+  box: { left: number; top: number; width: number; height: number },
+): { x: number; y: number } {
+  const pct = (value: number, size: number) => {
+    if (size <= 0) return 0;
+    const percent = Math.round((value / size) * 1000) / 10;
+    return Math.min(100, Math.max(0, percent));
+  };
+  return {
+    x: pct(click.x - box.left, box.width),
+    y: pct(click.y - box.top, box.height),
+  };
+}
+
+type FeedbackLabels = { pins: string; disagreements: string };
+
+/**
+ * The note of an adjustment request: what the person wrote, then each pin
+ * (numbered as the view numbers them) and each check they disagree with, as
+ * plain markdown the agent reads in the next run.
+ */
+export function buildAdjustmentNote(
+  feedback: { note: string; pins: ReviewPin[]; disagreements: Disagreement[] },
+  labels: FeedbackLabels,
+): string {
+  const parts: string[] = [];
+  const note = feedback.note.trim();
+  if (note) parts.push(note);
+
+  if (feedback.pins.length > 0) {
+    const lines = feedback.pins.map((pin, index) => {
+      const text = pin.text.trim();
+      const where = `${pin.imageLabel} (x ${pin.x}%, y ${pin.y}%)`;
+      return `${index + 1}. ${where}${text ? `: ${text}` : ""}`;
+    });
+    parts.push(`**${labels.pins}**\n${lines.join("\n")}`);
+  }
+
+  if (feedback.disagreements.length > 0) {
+    const lines = feedback.disagreements.map((d) => {
+      const text = d.note.trim();
+      return `- ${d.text}${text ? `: ${text}` : ""}`;
+    });
+    parts.push(`**${labels.disagreements}**\n${lines.join("\n")}`);
+  }
+  return parts.join("\n\n");
+}
 
 const VERIFIED_MARKER =
   /^\*\*(?:Conferido pela deco|Checked by deco)\*\*\s*\n+([\s\S]*)$/i;
