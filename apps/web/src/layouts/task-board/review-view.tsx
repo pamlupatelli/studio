@@ -363,9 +363,7 @@ export function ReviewView({
                 placeholder={t("taskBoard.review.adjustmentPlaceholder")}
                 maxLength={MAX_FEEDBACK_LENGTH * 4}
                 value={note}
-                onChange={(event) =>
-                  changeDraft({ note: event.target.value })
-                }
+                onChange={(event) => changeDraft({ note: event.target.value })}
               />
               {feedbackCount > 0 && (
                 <p className="text-xs text-muted-foreground">

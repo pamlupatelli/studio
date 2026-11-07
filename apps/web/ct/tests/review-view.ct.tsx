@@ -137,7 +137,7 @@ test("pins: a click marks the image and travels with the adjustment", async ({
   const after = component.getByRole("button", {
     name: "Mark a spot on Depois",
   });
-  await after.click({ position: { x: 1, y: 1 } });
+  await after.click({ position: { x: 40, y: 40 } });
 
   await expect(component.getByTestId("review-pin")).toHaveCount(1);
   await component
@@ -164,7 +164,7 @@ test("pins: removing one clears its mark", async ({ mount }) => {
   const component = await mount(<ReviewViewHarness audience="deco" />);
   await component
     .getByRole("button", { name: "Mark a spot on Antes" })
-    .click({ position: { x: 1, y: 1 } });
+    .click({ position: { x: 40, y: 40 } });
   await expect(component.getByTestId("review-pin")).toHaveCount(1);
   await component.getByRole("button", { name: "Remove pin 1" }).click();
   await expect(component.getByTestId("review-pin")).toHaveCount(0);
