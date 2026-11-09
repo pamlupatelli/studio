@@ -26,6 +26,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useTaskBoardComments } from "@/hooks/use-task-board-comments";
 import { useTaskBoardItemPrs } from "@/hooks/use-task-board-item-prs";
 import { LOCALSTORAGE_KEYS } from "@/lib/localstorage-keys";
+import { authClient } from "@/lib/auth-client";
 import { useT } from "@/i18n/use-t.ts";
 import { laneHeader, type TaskBoardItem } from "./config";
 import { PreviewButton } from "./preview-button";
@@ -90,6 +91,7 @@ export function ConversationViews({
   const [showBody, setShowBody] = useState(false);
   const comments = useTaskBoardComments(item?.id);
   const { data: prs } = useTaskBoardItemPrs(item?.id);
+  const { data: session } = authClient.useSession();
 
   const all = comments.threads.flatMap((thread) => [thread, ...thread.replies]);
   const picked = pickReviewComment(all, SUPER_AGENT_ASSIGNEE_ID);
@@ -260,6 +262,7 @@ export function ConversationViews({
           <ReviewView
             key={`${item.id}-${round}-${picked.body.length}`}
             initialDraft={parseDraft(storedDraft)}
+            author={session?.user.name}
             onDraftChange={saveDraft}
             id={item.id}
             sections={picked.sections}

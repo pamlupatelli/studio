@@ -90,6 +90,10 @@ Not built here because they belong to the platform:
    decision is sent. They do not follow the person to another device, and the
    rest of the team cannot see them. Keeping them on the card would need new
    storage.
+8. **Several authors in one round.** Pins are one person's marks, sent as one
+   request with the author's name. If several people must annotate the same
+   round, pins become comments (author, time, replies, resolved) stored on the
+   card.
 9. **Choosing the status on adjustment.** Not built: adjustments always return to
    In Review.
 8. **Refuse versus adjust.** Both send the card back with a note. A separate

@@ -569,6 +569,7 @@ export const taskBoard = {
     "Ajuste pedido. O card voltou para {lane}.",
   "taskBoard.review.adjustmentTitle": "Ajuste pedido",
   "taskBoard.review.adjustmentRound": "rodada",
+  "taskBoard.review.marksBy": "Marcações de {name} · {origin}.",
   "taskBoard.review.originQa": "QA",
   "taskBoard.review.originCustomer": "Cliente",
   "taskBoard.review.returnedFrom": "Voltou do {origin} · rodada {n}",

@@ -74,6 +74,8 @@ export type ReviewViewProps = {
   approveLabel?: string;
   /** What the person had marked before, restored when the card reopens. */
   initialDraft?: ReviewDraft;
+  /** Who is marking, shown with the marks so the request has an author. */
+  author?: string;
   /** Called with every change of the marks, and with an empty draft once the
    *  decision is sent, so the caller can keep and clear it. */
   onDraftChange?: (draft: ReviewDraft) => void;
@@ -95,6 +97,7 @@ export function ReviewView({
   verification,
   approveLabel,
   initialDraft = EMPTY_DRAFT,
+  author,
   onDraftChange,
   onApprove,
   onRequestAdjustment,
@@ -370,6 +373,14 @@ export function ReviewView({
                   {t("taskBoard.review.adjustmentAttached", {
                     n: String(feedbackCount),
                   })}
+                  {author &&
+                    ` ${t("taskBoard.review.marksBy", {
+                      name: author,
+                      origin:
+                        audience === "customer"
+                          ? t("taskBoard.review.originCustomer")
+                          : t("taskBoard.review.originQa"),
+                    })}`}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
@@ -516,10 +527,13 @@ function AgentCheck({
   return (
     <li
       data-status={item.status}
-      className="flex flex-col gap-2 border-b border-border py-3 text-sm first:pt-1 last:border-b-0 last:pb-1"
+      className="flex flex-col gap-2 border-b border-border py-3.5 text-sm first:pt-1 last:border-b-0 last:pb-1"
     >
       <div className="flex items-start gap-2.5">
-        <span title={statusLabel} className="mt-0.5 shrink-0">
+        <span
+          title={statusLabel}
+          className="flex h-5 shrink-0 items-center justify-center"
+        >
           {item.status === "passed" && (
             <CheckCircle className="size-4 text-success" />
           )}
@@ -533,7 +547,7 @@ function AgentCheck({
         </span>
         <span
           className={cn(
-            "min-w-0 flex-1",
+            "min-w-0 flex-1 leading-5",
             item.status === "failed" && "text-destructive",
           )}
         >
@@ -549,7 +563,7 @@ function AgentCheck({
             variant="ghost"
             size="icon-xs"
             className={cn(
-              "shrink-0 text-muted-foreground",
+              "-my-0.5 shrink-0 text-muted-foreground",
               note !== undefined && "text-destructive",
             )}
             aria-pressed={note !== undefined}
@@ -771,35 +785,38 @@ function EvidenceFigure({
           </a>
         )}
       </figcaption>
-      {pinning &&
-        own.map(({ pin, number }) => (
-          <div key={pin.id} className="flex items-start gap-2">
-            <span className="mt-1.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-              {number}
-            </span>
-            <Textarea
-              rows={1}
-              className="max-h-40 min-h-0 resize-none py-1.5"
-              aria-label={t("taskBoard.review.pinLabel", {
-                n: String(number),
-              })}
-              placeholder={t("taskBoard.review.pinPlaceholder")}
-              maxLength={MAX_FEEDBACK_LENGTH}
-              value={pin.text}
-              onChange={(event) => pinning.edit(pin.id, event.target.value)}
-            />
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label={t("taskBoard.review.pinRemove", {
-                n: String(number),
-              })}
-              onClick={() => pinning.remove(pin.id)}
-            >
-              <XClose size={14} />
-            </Button>
-          </div>
-        ))}
+      {pinning && own.length > 0 && (
+        <div className="mt-2 flex flex-col gap-3">
+          {own.map(({ pin, number }) => (
+            <div key={pin.id} className="flex items-start gap-2">
+              <span className="mt-1.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                {number}
+              </span>
+              <Textarea
+                rows={1}
+                className="max-h-40 min-h-0 resize-none py-1.5"
+                aria-label={t("taskBoard.review.pinLabel", {
+                  n: String(number),
+                })}
+                placeholder={t("taskBoard.review.pinPlaceholder")}
+                maxLength={MAX_FEEDBACK_LENGTH}
+                value={pin.text}
+                onChange={(event) => pinning.edit(pin.id, event.target.value)}
+              />
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label={t("taskBoard.review.pinRemove", {
+                  n: String(number),
+                })}
+                onClick={() => pinning.remove(pin.id)}
+              >
+                <XClose size={14} />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
     </figure>
   );
 }
