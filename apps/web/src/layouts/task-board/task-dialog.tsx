@@ -126,6 +126,7 @@ import {
   prCardActions,
 } from "./pr-card-actions";
 import { PreviewButton } from "./preview-button";
+import { ConversationViews } from "./conversation-views";
 import { decodeRunFailureReason, lastRunFailure } from "./run-failure";
 import { githubReauthUrl } from "./github-reauth-url";
 import { useRepositories } from "@/hooks/use-git-providers";
@@ -1091,7 +1092,30 @@ function TaskBoardItemEditor({
                 />
               )}
 
-              <div className="flex flex-col">
+              <ConversationViews
+                item={item}
+                status={status}
+                onMove={(next) => patch(next)}
+                activity={
+                  item ? (
+                    <>
+                      {/* Separates the task itself from the record of it. */}
+                      <div className="py-4">
+                        <hr className="border-border" />
+                      </div>
+                      <div className="flex flex-col gap-8">
+                        <ActivitySection
+                          item={item}
+                          members={members}
+                          onOpenThread={(thread) =>
+                            setOpenThreadId(thread.threadId)
+                          }
+                        />
+                      </div>
+                    </>
+                  ) : null
+                }
+              >
                 <div className="flex flex-col py-6">
                   <div
                     // Clip only while folded: the image node's remove button is
@@ -1169,27 +1193,7 @@ function TaskBoardItemEditor({
 
                 {item && <ParentSection item={item} />}
                 {item && <ChildrenSection item={item} />}
-
-                {/* Separates the task itself from the record of it (links,
-                  activity). Edit mode only — a new task has neither. */}
-                {item && (
-                  <div className="py-4">
-                    <hr className="border-border" />
-                  </div>
-                )}
-
-                {item && (
-                  <div className="flex flex-col gap-8">
-                    <ActivitySection
-                      item={item}
-                      members={members}
-                      onOpenThread={(thread) =>
-                        setOpenThreadId(thread.threadId)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
+              </ConversationViews>
             </div>
           </TaskConversationFrame>
 
