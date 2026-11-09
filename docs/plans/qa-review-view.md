@@ -96,5 +96,5 @@ Not built here because they belong to the platform:
    card.
 9. **Choosing the status on adjustment.** Not built: adjustments always return to
    In Review.
-8. **Refuse versus adjust.** Both send the card back with a note. A separate
+10. **Refuse versus adjust.** Both send the card back with a note. A separate
    "refuse" would only be worth it if it meant something different downstream.
